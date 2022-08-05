@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 798dcc078ceb51b4bb1827b5f9d32098
+guid: 1ed4dcdfc4ddf0d47acb640842c85d42
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -66,7 +66,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 4096
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -104,421 +104,421 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: BlackHuman_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 256
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e6d39576f56e5194b8690bdcd5f3abbe
-      internalID: 27830651
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_1
-      rect:
-        serializedVersion: 2
-        x: 32
-        y: 256
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: bc795a9a3a137dd4d996d51de9543b70
-      internalID: -1285180557
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_2
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 256
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f95e0a3b708cee343b58e85514b46932
-      internalID: -511793910
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_3
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 256
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 1c3740b8be8f1eb479f80622a48989a3
-      internalID: 1211733615
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_4
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 192
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: b04dc20d94463894f84bb1b4061737bb
-      internalID: -1317188627
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_5
-      rect:
-        serializedVersion: 2
-        x: 32
-        y: 192
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 34386819d34fe4843ac9dc162d744eb5
-      internalID: 1281232303
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_6
-      rect:
-        serializedVersion: 2
-        x: 64
-        y: 192
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 2dad53957277c3545b329db1a64c4cc9
-      internalID: 914748422
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_7
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 192
-        width: 32
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a4aeb0816ab20c24c9e94f13bae09056
-      internalID: -477516733
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: BlackHuman_8
+      name: Enemy_Slime_0
       rect:
         serializedVersion: 2
         x: 0
         y: 128
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 36c1f3782bfd50941915cbeab03dd8fd
-      internalID: -288949717
+      spriteID: fa0d87c86f712d140a98b67bd254de1d
+      internalID: -77994672
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_9
+      name: Enemy_Slime_1
       rect:
         serializedVersion: 2
         x: 32
         y: 128
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c7a04b470390cca45bdb8bb97d9c4dbd
-      internalID: 1628587506
+      spriteID: c627cc4ea89dd3446804303c1f647434
+      internalID: 194692969
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_10
+      name: Enemy_Slime_2
       rect:
         serializedVersion: 2
         x: 64
         y: 128
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b52aa33ed1dfc5e4f87d968657821737
-      internalID: -770078364
+      spriteID: 6b29aec7772d61542801201c54b314b3
+      internalID: 54646158
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_11
+      name: Enemy_Slime_3
       rect:
         serializedVersion: 2
         x: 96
         y: 128
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c6c8a9e1bd286fd4c8151bd2e71571d1
-      internalID: 1473245173
+      spriteID: cedc3a525978c414d9a64a35ae448af1
+      internalID: 237798466
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_12
+      name: Enemy_Slime_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 96
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 59580b1dc926a504ba527c6d35d96a4f
+      internalID: -1871481527
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_5
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 96
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 31bf827bdd62c8b4e83fe74fb0196c9d
+      internalID: 195827511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_6
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 96
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d6ed6b92d7e95a438be6d90ba32ab9a
+      internalID: -250459503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_7
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 96
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 160e6ac7c01feb6429a4cd445e008fc3
+      internalID: -1142486378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_8
       rect:
         serializedVersion: 2
         x: 0
         y: 64
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 872cf6d386cef9347a39b999fe1049ed
-      internalID: 1156022340
+      spriteID: 998a853b14e2c7145912911670c7e494
+      internalID: -203402838
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_13
+      name: Enemy_Slime_9
       rect:
         serializedVersion: 2
         x: 32
         y: 64
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c2253b9c6e5cc1044a029fa953992ef6
-      internalID: 411655691
+      spriteID: 88bb8614be7fa8b4dac69ceb8e090941
+      internalID: 1245480298
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_14
+      name: Enemy_Slime_10
       rect:
         serializedVersion: 2
         x: 64
         y: 64
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2c136932ac792f0459595a277caa1a82
-      internalID: 2040049862
+      spriteID: b20999b75c21b294eb28b3c86ee4d1b1
+      internalID: -136147510
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_15
+      name: Enemy_Slime_11
       rect:
         serializedVersion: 2
         x: 96
         y: 64
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7fa2055040d6d3148a5272b83ef449f8
-      internalID: 185238924
+      spriteID: d6b76abe828f86d40be7eb8b4f31929a
+      internalID: 1063673741
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_16
+      name: Enemy_Slime_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 32
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 455c55d6aaa4c6243a649b6d86becfc3
+      internalID: -1218145319
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_13
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 32
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 833d09ebfc979db4cbfb9482ffa3359f
+      internalID: 1592312148
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_14
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 32
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b0f9e92630b06944b87742e86fd9ac9f
+      internalID: -333537187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_15
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 32
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4fbb8cd10f8250d439d9029f32918d79
+      internalID: 648818568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_16
       rect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a4a2b81ab34743e49974bdd075bd760f
-      internalID: -1462247461
+      spriteID: ab3c446d044ee9745850840110a24fc7
+      internalID: -1266540990
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_17
+      name: Enemy_Slime_17
       rect:
         serializedVersion: 2
         x: 32
         y: 0
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1e5adb1600af07643b4165e2f96a480e
-      internalID: -685737619
+      spriteID: aaaa0c22bdc46674b993d7749d838cb4
+      internalID: 203405823
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_18
+      name: Enemy_Slime_18
       rect:
         serializedVersion: 2
         x: 64
         y: 0
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 19775728a0aeb6a4e82e2272813da1af
-      internalID: -1839699911
+      spriteID: c3c81ce100a7e1a49a0c555346fc0d54
+      internalID: 836778069
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlackHuman_19
+      name: Enemy_Slime_19
       rect:
         serializedVersion: 2
         x: 96
         y: 0
         width: 32
-        height: 64
+        height: 32
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b84625969b5a7444593b501fdf1f5ddb
-      internalID: -1351350958
+      spriteID: 726870f285c7b2341b0abbe70281fdff
+      internalID: -1881400994
       vertices: []
       indices: 
       edges: []
@@ -534,26 +534,26 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      BlackHuman_7: -477516733
-      BlackHuman_18: -1839699911
-      BlackHuman_5: 1281232303
-      BlackHuman_0: 27830651
-      BlackHuman_12: 1156022340
-      BlackHuman_2: -511793910
-      BlackHuman_10: -770078364
-      BlackHuman_19: -1351350958
-      BlackHuman_6: 914748422
-      BlackHuman_9: 1628587506
-      BlackHuman_4: -1317188627
-      BlackHuman_8: -288949717
-      BlackHuman_15: 185238924
-      BlackHuman_13: 411655691
-      BlackHuman_3: 1211733615
-      BlackHuman_14: 2040049862
-      BlackHuman_17: -685737619
-      BlackHuman_1: -1285180557
-      BlackHuman_11: 1473245173
-      BlackHuman_16: -1462247461
+      Enemy_Slime_3: 237798466
+      Enemy_Slime_18: 836778069
+      Enemy_Slime_8: -203402838
+      Enemy_Slime_6: -250459503
+      Enemy_Slime_4: -1871481527
+      Enemy_Slime_14: -333537187
+      Enemy_Slime_13: 1592312148
+      Enemy_Slime_2: 54646158
+      Enemy_Slime_11: 1063673741
+      Enemy_Slime_9: 1245480298
+      Enemy_Slime_16: -1266540990
+      Enemy_Slime_10: -136147510
+      Enemy_Slime_15: 648818568
+      Enemy_Slime_17: 203405823
+      Enemy_Slime_5: 195827511
+      Enemy_Slime_7: -1142486378
+      Enemy_Slime_12: -1218145319
+      Enemy_Slime_19: -1881400994
+      Enemy_Slime_1: 194692969
+      Enemy_Slime_0: -77994672
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0
