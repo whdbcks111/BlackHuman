@@ -6,12 +6,14 @@ using UnityEngine.Tilemaps;
 public class MapGenerator : MonoBehaviour
 {
 
+    public static MapGenerator Instance { get; private set; }
+
     public readonly Vector2Int[] Directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
     [SerializeField]
     private int _generalRoomSize, _bossRoomSize;
     [SerializeField]
-    private Tilemap _wallTilemap, _floorTilemap, _minimapTilemap;
+    private Tilemap _wallTilemap, _floorTilemap, _doorTilemap, _minimapTilemap;
     [SerializeField]
     private RuleTile _wallRuleTile;
     [SerializeField]
@@ -19,40 +21,191 @@ public class MapGenerator : MonoBehaviour
     [SerializeField]
     private TileBase _minimapFloorTile;
     [SerializeField]
-    private GameObject _roomTemp;
+    private TileBase _doorFloorTile, _doorWallTile;
 
-    private Dictionary<Vector2Int, Room> rooms = new();
+    [SerializeField]
+    private MapTheme[] _themes;
+    [SerializeField]
+    private Formation[] _formations;
+
+    private Dictionary<string, Formation> _formationMap = new();
+    private Dictionary<Vector2Int, Room> _rooms = new();
     private bool _isFinalized = false;
+    private MapTheme _curTheme;
 
-    void Start()
+
+
+    private void Awake() 
+    {
+        Instance = this;
+
+        foreach(var f in _formations)
+        {
+            _formationMap[f.Name] = f;
+        }
+    }
+
+    private void Start() 
     {
         GenerateRooms(10);
     }
 
+    private void Update() {
+        var playerPos = Player.Instance.transform.position;
+        
+        foreach(var room in _rooms.Values)
+        {
+            if(!IsInAABB((Vector2)playerPos, 
+                    _floorTilemap.CellToWorld((Vector3Int)room.BoundStart) + Vector3.up * 0.8f + Vector3.right * 0.3f, 
+                    _floorTilemap.CellToWorld((Vector3Int)room.BoundEnd) + Vector3.down * 0.2f + Vector3.right * 0.7f)) continue;
+            Player.Instance.CurrentRoom = room;
+            if(room.Type != RoomType.Monster && room.Type != RoomType.Boss) continue;
+            if(!room.IsClosed && !room.WasOnceClosed) 
+            {
+                CloseRoom(room);
+            }
+            else 
+            {
+                var isEnemyIn = false;
+                foreach(var enemy in Enemy.GetEnemies())
+                {
+                    var enemyPos = enemy.transform.position;
+                    if(IsInAABB(enemyPos, room.BoundStart, room.BoundEnd + Vector2Int.one))
+                    {
+                        isEnemyIn = true;
+                        break;
+                    }
+                }
+
+                if(!isEnemyIn) OpenRoom(room);
+            }
+        }
+    }
+
+    private static bool IsInAABB(Vector2 pos, Vector2 start, Vector2 end)
+    {
+        return start.x <= pos.x && pos.x <= end.x
+                && start.y <= pos.y && pos.y <= end.y;
+    }
+
+    public void CloseRoom(Room room)
+    {
+        if(room.IsClosed) return;
+        room.IsClosed = true;
+
+        if(room.Type == RoomType.Boss) SoundManager.Instance.BgmAudioSource.pitch = 1.15f;
+
+        for(var x = room.BoundStart.x; x <= room.BoundEnd.x; x++)
+        {    
+            var startPos = new Vector3Int(x, room.BoundStart.y - 1);
+            var endPos = new Vector3Int(x, room.BoundEnd.y + 1);
+            CloseDoor(startPos);
+            CloseDoor(endPos);
+        }
+        for(var y = room.BoundStart.y; y <= room.BoundEnd.y; y++)
+        {    
+            var startPos = new Vector3Int(room.BoundStart.x - 1, y);
+            var endPos = new Vector3Int(room.BoundEnd.x + 1, y);
+            CloseDoor(startPos);
+            CloseDoor(endPos);
+        }
+        GenerateShadowDefault(_doorTilemap);
+        SoundManager.Instance.PlayOneShot("Door", 7f);
+
+        if(room.Type != RoomType.Boss) 
+        {
+            Enemy[] enemyPrefabs = _curTheme.Enemies;
+
+            foreach(var enemyPos in room.Enemies)
+            {
+                Enemy target = enemyPrefabs[Mathf.Clamp(enemyPos.EnemyIdx, 0, enemyPrefabs.Length)]; 
+                Enemy.SpawnEnemy(target, Formation.GetPivotPos(room.BoundStart, room.BoundEnd, 
+                        Vector2Int.FloorToInt(enemyPos.Pos), enemyPos.Pivot));
+            }
+        }
+        else
+        {
+            Enemy[] bosses = _curTheme.Bosses;
+            Enemy boss = bosses[Random.Range(0, bosses.Length)]; 
+
+            Enemy.SpawnEnemy(boss, _floorTilemap.CellToWorld((Vector3Int)(room.BoundStart + room.BoundEnd) / 2));
+        }
+    }
+
+    public void OpenRoom(Room room)
+    {
+        if(!room.IsClosed) return;
+        room.IsClosed = false;
+
+        if(room.Type == RoomType.Boss) SoundManager.Instance.BgmAudioSource.pitch = 1f;
+
+        for(var x = room.BoundStart.x; x <= room.BoundEnd.x; x++)
+        {    
+            var startPos = new Vector3Int(x, room.BoundStart.y - 1);
+            var endPos = new Vector3Int(x, room.BoundEnd.y + 1);
+            OpenDoor(startPos);
+            OpenDoor(endPos);
+        }
+        for(var y = room.BoundStart.y; y <= room.BoundEnd.y; y++)
+        {    
+            var startPos = new Vector3Int(room.BoundStart.x - 1, y);
+            var endPos = new Vector3Int(room.BoundEnd.x + 1, y);
+            OpenDoor(startPos);
+            OpenDoor(endPos);
+        }
+        GenerateShadowDefault(_doorTilemap);
+        SoundManager.Instance.PlayOneShot("Door", 7f);
+
+        if(Random.value < 10.5f)
+        {
+            var center = (room.BoundStart + room.BoundEnd) / 2;
+            var treasureBox = Block.SetBlock(center, "TreasureBox");
+            ParticleManager.Instance.SpawnParticle(treasureBox.gameObject.transform.position, ParticleType.HorizontalExplode, 1f, 0, 10);
+        }
+    }
+
+    private void CloseDoor(Vector3Int pos)
+    {      
+        if(_floorTilemap.GetTile(pos) == _doorFloorTile)
+        {
+            _doorTilemap.SetTile(pos, _doorWallTile);
+            _floorTilemap.SetTile(pos, null);
+        }
+    }
+
+    private void OpenDoor(Vector3Int pos)
+    {      
+        if(_doorTilemap.GetTile(pos) == _doorWallTile) 
+        {
+            _floorTilemap.SetTile(pos, _doorFloorTile);
+            _doorTilemap.SetTile(pos, null);
+        }
+    }
+
     public void GenerateRooms(int roomCnt)
     {
+        _curTheme = _themes[Random.Range(0, _themes.Length)];
         _isFinalized = false;
-        rooms.Clear();
+        _rooms.Clear();
         _wallTilemap.ClearAllTiles();
         _floorTilemap.ClearAllTiles();
         var newRoom = new Room(0, Vector2Int.zero, null);
-        rooms.Add(Vector2Int.zero, newRoom);
+        _rooms.Add(Vector2Int.zero, newRoom);
         TryCreateTransition(newRoom, roomCnt);
         GenerateFinalize();
     }
 
     private void TryCreateTransition(Room room, int roomCnt)
     {
-        if (room.TotalLength >= roomCnt * .35f) {
-            print("trasition end (long)");
+        if (room.TotalLength >= roomCnt * .4f) {
             return;
         }
         var cnt = Random.Range(1, 4);
-        if (rooms.Count <= 1) cnt = 4;
+        if (_rooms.Count <= 1) cnt = 4;
         List<Vector2Int> directions = new(Directions);
         while (cnt > 0)
         {
-            if (roomCnt <= rooms.Count)
+            if (roomCnt <= _rooms.Count)
             {
                 return;
             }
@@ -62,9 +215,9 @@ public class MapGenerator : MonoBehaviour
             cnt--;
 
             var pos = room.Pos + dir * _bossRoomSize;
-            if (rooms.ContainsKey(pos)) continue;
-            var newRoom = new Room(room.TotalLength + 1, pos, room);
-            rooms.Add(pos, newRoom);
+            if (_rooms.ContainsKey(pos)) continue;
+            var newRoom = new Room(room.TotalLength + 1, pos, room, RoomType.Monster); // (RoomType)Random.Range(0, (int)RoomType.Boss)
+            _rooms.Add(pos, newRoom);
             room.Children.Add(newRoom);
             TryCreateTransition(newRoom, roomCnt);
         }
@@ -76,22 +229,22 @@ public class MapGenerator : MonoBehaviour
         _isFinalized = true;
 
         Room farthestRoom = null;
-        foreach (var room in rooms.Values)
+        foreach (var room in _rooms.Values)
         {
             if (farthestRoom == null 
                     || farthestRoom.TotalLength < room.TotalLength
                     || (farthestRoom.TotalLength == room.TotalLength && room.Pos.magnitude > farthestRoom.Pos.magnitude)) 
                 farthestRoom = room;
         }
-        farthestRoom.IsBossRoom = true;
+        farthestRoom.Type = RoomType.Boss;
 
         GenerateTiles();
     }
     private void GenerateTiles() {
         var cellPos = (Vector2Int)_floorTilemap.WorldToCell(Vector3.zero);
-        foreach (var room in rooms.Values)
+        foreach (var room in _rooms.Values)
         {
-            var size = room.IsBossRoom ? _bossRoomSize : _generalRoomSize - Random.Range(0, 5);
+            var size = room.Type == RoomType.Boss ? _bossRoomSize : _generalRoomSize - Random.Range(-2, 3);
             var start = -size / 2;
             var end = size / 2 - 1;
             room.BoundStart = room.Pos + new Vector2Int(start, start);
@@ -112,17 +265,13 @@ public class MapGenerator : MonoBehaviour
             _wallTilemap.SetTile((Vector3Int)(cellPos + room.Pos + new Vector2Int(end + 1, start - 1)), _wallRuleTile);
         }
 
-        List<Vector3Int> wallCheck = new();
-
-        foreach (var room in rooms.Values)
+        foreach (var room in _rooms.Values)
         {
-            var size = room.IsBossRoom ? _bossRoomSize : _generalRoomSize;
-            var start = -size / 2;
-            var end = size / 2 - 1;
+            var size = room.BoundEnd.x - room.BoundStart.x + 1;
             foreach(var child in room.Children) {
                 if(child == room.Parent) continue;
                 var dir = (child.Pos - room.Pos);
-                var childSize = child.IsBossRoom ? _bossRoomSize : _generalRoomSize;
+                var childSize = child.BoundEnd.x - child.BoundStart.x + 1;
                 for(var h = size / 2 - 6; h < _bossRoomSize - childSize / 2 + 6; h++) {
                     for(var w = -3; w < 3; w++) {
                         var tilePos = (Vector3Int)(
@@ -131,24 +280,39 @@ public class MapGenerator : MonoBehaviour
                                 : new Vector2Int(w, (dir.y > 0 ? 1 : -1) * h))
                         );
                         if(_floorTilemap.GetTile(tilePos) != null) continue;
+                        var isChildDir = IsInAABB((Vector2Int)tilePos, child.BoundStart - Vector2Int.one, child.BoundEnd + Vector2Int.one);
+                        var doGenerateDoor = (isChildDir && (child.Type == RoomType.Monster || child.Type == RoomType.Boss)) 
+                                || (!isChildDir && (room.Type == RoomType.Monster || room.Type == RoomType.Boss));
                         if(-3 < w && w < 2) {
+                            _floorTilemap.SetTile(tilePos, 
+                                    (_wallTilemap.GetTile(tilePos) == null || !doGenerateDoor) ?
+                                    _floorTiles[Random.Range(0, _floorTiles.Length)] : _doorFloorTile
+                            );
                             _wallTilemap.SetTile(tilePos, null);
-                            _floorTilemap.SetTile(tilePos, _floorTiles[Random.Range(0, _floorTiles.Length)]);
                         }
                         else {
                             if(_wallTilemap.GetTile(tilePos) == null)
                                 _wallTilemap.SetTile(tilePos, _wallRuleTile);
-                            else {
-                                wallCheck.Add(tilePos);
-                            }
                         }
                     }
+                }
+            }
+
+            if(room.Type == RoomType.Monster) 
+            {
+                var formations = _curTheme.Formations;
+                var formation = _formationMap[formations[Random.Range(0, formations.Length)]];
+                room.Enemies = formation.Enemies;
+
+                foreach(var blockPos in formation.Blocks)
+                {
+                    Block.SetBlock(Formation.GetPivotPos(room.BoundStart, room.BoundEnd, blockPos.Pos, blockPos.Pivot), blockPos.Block);
                 }
             }
         }
         
         GenerateMinimapTiles();
-        GenerateShadow();
+        GenerateShadow(_wallTilemap);
     }
 
     private void GenerateMinimapTiles() 
@@ -164,30 +328,23 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    private void GenerateShadow() {
-        StartCoroutine(nameof(GenerateShadowC));
+    private void GenerateShadow(Tilemap tilemap) {
+        StartCoroutine(nameof(GenerateShadowC), tilemap);
     }
 
-    private IEnumerator GenerateShadowC() {
+    private IEnumerator GenerateShadowC(Tilemap tilemap) {
         yield return null;
         yield return null;
-        _wallTilemap.GetComponent<AutoShadowClosedTilemap>().Generate();
+        tilemap.GetComponent<AutoShadowClosedTilemap>().Generate();
     }
 
-    public class Room
-    {
-        public int TotalLength;
-        public List<Room> Children = new();
-        public Room Parent;
-        public bool IsBossRoom = false;
-        public Vector2Int Pos;
-        public Vector2Int BoundStart, BoundEnd;
+    private void GenerateShadowDefault(Tilemap tilemap) {
+        StartCoroutine(nameof(GenerateShadowDefaultC), tilemap);
+    }
 
-        public Room(int totalLen, Vector2Int pos, Room parent)
-        {
-            Pos = pos;
-            Parent = parent;
-            TotalLength = totalLen;
-        }
+    private IEnumerator GenerateShadowDefaultC(Tilemap tilemap) {
+        yield return null;
+        yield return null;
+        tilemap.GetComponent<AutoShadowClosedTilemap>().GenerateDefault();
     }
 }

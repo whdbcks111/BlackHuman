@@ -40,7 +40,8 @@ public class PathFinder : MonoBehaviour {
                 Vector2Int cellPos = boundMin + new Vector2Int(x, y);
                 for(var sx = 0; sx < selfSize.x; sx++) {
                     for(var sy = 0; sy < selfSize.y; sy++) {
-                        if(_wallTilemap.GetTile((Vector3Int)(cellPos + new Vector2Int(sx, sy))) != null) {
+                        var pos = cellPos + new Vector2Int(sx, sy);
+                        if(_wallTilemap.GetTile((Vector3Int)pos) != null || Block.Blocks.ContainsKey(pos)) {
                             isWall = true;
                             break;
                         }

@@ -14,24 +14,45 @@ public class ParticleManager : MonoBehaviour
         Instance = this;
     }
 
-    public void SpawnParticle(Vector3 pos, ParticleType type, float duration = 1f, 
-            int totalCount = 0, bool loop = false, Transform parent=null)
+    public ParticleSystem SpawnParticle(Vector3 pos, ParticleType type, Color color, float duration = 1f, 
+            int countPerSecond = 0, int burst = 0, bool loop = false, Transform parent=null)
     {
         if(!_particles.ContainsKey(type)) throw new UnityException("Invalid Particle Name");
         var particleSystem = Instantiate(_particles[type], parent == null ? transform: parent);
         particleSystem.transform.localPosition = pos;
         var ps = particleSystem.GetComponent<ParticleSystem>();
         ps.Stop();
+
         var main = ps.main;
         main.duration = duration;
         main.loop = loop;
+        if(color != Color.clear) main.startColor = color;
+
         var emission = ps.emission;
-        if(totalCount > 0) emission.rateOverTime = totalCount / duration;
+        emission.rateOverTime = countPerSecond;
+
+        var burstOpt = emission.GetBurst(0);
+        burstOpt.count = burst;
+        emission.SetBurst(0, burstOpt);
+
         ps.Play();
+
+        return ps;
     }
 
-    public void SpawnParticle(ParticleType type, Transform parent, float duration = 1f, int count = 0, bool loop = false)
+    public ParticleSystem SpawnParticle(Vector3 pos, ParticleType type, float duration = 1f, 
+            int countPerSecond = 0, int burst = 0, bool loop = false, Transform parent=null)
     {
-        SpawnParticle(Vector3.zero, type, duration, count, loop, parent);
+        return SpawnParticle(pos, type, Color.clear, duration, countPerSecond, burst, loop, parent);
+    }
+
+    public ParticleSystem SpawnParticle(ParticleType type, Transform parent, float duration = 1f, int count = 0, int burst = 0, bool loop = false)
+    {
+        return SpawnParticle(Vector3.zero, type, Color.clear, duration, count, burst, loop, parent);
+    }
+
+    public ParticleSystem SpawnParticle(ParticleType type, Color color, Transform parent, float duration = 1f, int count = 0, int burst = 0, bool loop = false)
+    {
+        return SpawnParticle(Vector3.zero, type, color, duration, count, burst, loop, parent);
     }
 }

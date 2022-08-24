@@ -1,9 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public abstract class Enemy : LivingEntity
 {
+
+    private static List<Enemy> _enemies = new();
 
     [SerializeField]
     public Vector2Int Size = new Vector2Int(1, 1);
@@ -12,27 +15,53 @@ public abstract class Enemy : LivingEntity
 
     private Vector3 _beforePos;
     private float _moveCheckTimer = 0f;
-    protected GameObject hpBarObject, hpBack;
+    protected GameObject lifeBack;
+    protected Image lifeBarImg;
     private GameObject _icon;
     private float _pathFindTimer = 0f;
     private Stack<Vector3> _paths = new();
     private Vector3 _beforePath;
     
+    public static Enemy SpawnEnemy(string name, Vector2 pos)
+    {
+        return SpawnEnemy(Resources.Load<GameObject>("Enemies/" + name), pos);
+    }
+    
+    public static Enemy SpawnEnemy(Enemy enemy, Vector2 pos)
+    {
+        return SpawnEnemy(enemy.gameObject, pos);
+    }
+    
+    public static Enemy SpawnEnemy(GameObject enemy, Vector2 pos)
+    {
+        var obj = Instantiate(enemy, Storage.Get("EnemyContainer").transform);
+        obj.transform.position = pos;
+        ParticleManager.Instance.SpawnParticle(pos, ParticleType.Smoke, 0.5f, 0, 10);
+        var e = obj.GetComponent<Enemy>();
+        return e;
+    }
+
+    public static IEnumerable<Enemy> GetEnemies()
+    {
+        foreach(var e in _enemies) yield return e;
+    }
 
     protected override void Awake()
     {
+        _enemies.Add(this);
+        base.Awake();
         _beforePos = transform.position;
-        hpBack = Instantiate(Resources.Load<GameObject>("Enemies/EnemyHpBar"), transform);
-        hpBarObject = hpBack.transform.GetChild(0).gameObject;
+        lifeBack = Instantiate(Resources.Load<GameObject>("Enemies/EnemyBar"), spriteRenderer.transform);
+        lifeBarImg = lifeBack.transform.GetChild(0).GetChild(0).GetComponent<Image>();
         _beforePath = transform.position;
         _icon = Instantiate(Resources.Load<GameObject>("Enemies/EnemyIcon"), transform);
     }
 
     protected void ResizeHpBar()
     {
-        var s = hpBack.transform.localScale;
+        var s = lifeBack.transform.localScale;
         var ps = transform.localScale;
-        hpBack.transform.localScale = new Vector3(s.x / ps.x, s.y / ps.y);
+        lifeBack.transform.localScale = new Vector3(s.x / ps.x, s.y / ps.y);
     }
 
     protected void ResizeIcon()
@@ -40,6 +69,10 @@ public abstract class Enemy : LivingEntity
         var s = _icon.transform.localScale;
         var ps = transform.localScale;
         _icon.transform.localScale = new Vector3(s.x / ps.x, s.y / ps.y);
+    }
+
+    private void OnDestroy() {
+        _enemies.Remove(this);
     }
 
     protected override void Start()
@@ -57,9 +90,7 @@ public abstract class Enemy : LivingEntity
 
     protected void DisplayUpdate()
     {
-        var hs = hpBarObject.transform.localScale;
-        hs.x = Mathf.Clamp01(Hp / MaxHp);
-        hpBarObject.transform.localScale = hs;
+        lifeBarImg.fillAmount = Life / Attribute.GetValue(AttributeType.MaxLife);
     }
 
     protected new void Move()
@@ -80,11 +111,14 @@ public abstract class Enemy : LivingEntity
     protected override IEnumerator KillEffect()
     {
         yield return base.KillEffect();
+        _enemies.Remove(this);
         Destroy(gameObject);
     }
 
     protected void FollowPlayer()
     {
+        if(Player.Instance.IsDead) return;
+
         // 몸의 사이즈를 포함해서 일직선상으로 플레이어가 시야에 잡힌다면, 플레이어 방향으로 이동
         var playerDir = (Player.Instance.transform.position - transform.position).normalized;
         var hit = Physics2D.CircleCast(transform.position, Mathf.Max(Size.x, Size.y), playerDir,

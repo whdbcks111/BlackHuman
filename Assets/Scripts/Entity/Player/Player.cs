@@ -2,23 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 using TMPro;
+using System;
 
 public class Player : LivingEntity
 {
+    private static int s_playerLayer = -1, s_passingLayer = -1;
+
     public static Player Instance { get; private set; }
     public const byte HotbarSize = 5;
     public static readonly KeyCode[] AlphaKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5,
             KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9 };
 
     [SerializeField]
-    private BoxCollider2D _collider;
+    private Image _miniLifeBarImg, _miniManaBarImg;
     [SerializeField]
-    private GameObject _hpBarObject, _mpBarObject;
-    [SerializeField]
-    private TextMeshProUGUI _hpText, _mpText;
-    [SerializeField]
-    private Image _hpBarImg, _mpBarImg;
+    private Image _lifeBarImg, _manaBarImg, _staminaBarImg;
     [SerializeField]
     private GameObject _slotPrefab, _hotbar;
     [SerializeField]
@@ -29,22 +29,23 @@ public class Player : LivingEntity
     private GameObject _floatingItem;
     [SerializeField]
     private SpriteRenderer _floatingItemRenderer, _sweepRenderer;
+    public Image BossBarBack, BossBar;
 
-    private Vector2 _originalColSize, _originalColOffset;
     private readonly SlotInfo[] _slots = new SlotInfo[HotbarSize];
     public readonly Inventory Inventory = new();
     private float _slotWidth;
+
+    public Room CurrentRoom;
 
     protected override void Awake()
     {
         base.Awake();
 
-        GetComponent<SpriteRenderer>();
-
         Instance = this;
         Name = "Player";
-        _originalColSize = _collider.size;
-        _originalColOffset = _collider.offset;
+
+        if(s_passingLayer == -1) s_passingLayer = LayerMask.NameToLayer("Passing");
+        if(s_playerLayer == -1) s_playerLayer = LayerMask.NameToLayer("Player");
 
         _slotWidth = _slotPrefab.GetComponent<RectTransform>().rect.width;
         var hotbarWidth = HotbarSize * _slotWidth;
@@ -70,9 +71,21 @@ public class Player : LivingEntity
         Inventory.AddItemStack(new ItemStack(ItemType.Sword), 1);
     }
 
+    protected override void InitializeDefaults()
+    {
+        base.InitializeDefaults();
+        Attribute.SetDefaultValue(AttributeType.MoveSpeed, 6);
+    }
+
     protected override void Start()
     {
         base.Start();
+    }
+
+    protected override void OnEarlyUpdate()
+    {
+        base.OnEarlyUpdate();
+        _floatingItem.SetActive(false);
     }
 
     protected override void OnUpdate()
@@ -82,16 +95,68 @@ public class Player : LivingEntity
         InventoryUpdate();
     }
 
-    protected override void ResetValues() {
-        base.ResetValues();
-        MoveSpeed = 5.0f;
-        _floatingItem.SetActive(false);
+    public override void Damage(Attribute attribute, DamageType type = DamageType.Normal, bool isCritical = false)
+    {
+        base.Damage(attribute, type, isCritical);
+        if(!IsDead) Camera.main.gameObject.GetComponent<CameraMove>().Shake(.3f, .2f);
     }
 
-    public override void Damage(float amount)
+    public override void ShowDamageEffect()
     {
-        base.Damage(amount);
-        Camera.main.gameObject.GetComponent<CameraMove>().Shake(.2f, .2f);
+        base.ShowDamageEffect();
+        gameObject.layer = s_passingLayer;
+    }
+
+    protected override IEnumerator ShowDamageEffectCoroutine(float time)
+    {
+        yield return base.ShowDamageEffectCoroutine(time);
+        gameObject.layer = s_playerLayer;
+    }
+
+    public void SweepAttackNearby(float radius, int count = 1, DamageType type = DamageType.Normal, 
+            bool knockback = true, string[] targetTags = null)
+    {
+        if(!IsAttackEnded()) return;
+        StartCoroutine(SweepAttackNearbyC( radius, count, type, knockback, targetTags ));
+    }
+
+    private IEnumerator SweepAttackNearbyC(float radius, int count, DamageType type, 
+            bool knockback, string[] targetTags)
+    {
+        print("attack start");
+        var mask = ~LayerMask.GetMask("Passing");
+        HashSet<Damageable> alreadyDamaged = new();
+        latestAttack = Time.time;
+
+        var beforeRot = _floatingItem.transform.rotation.eulerAngles.z;
+
+        for(var i = 0f; i < 0.4f; i += Time.deltaTime)
+        {
+            yield return null;
+            var rot = (_floatingItem.transform.rotation.eulerAngles.z + 90) % 360;
+
+            var maxRot = Mathf.Max(rot, beforeRot);
+            var minRot = Mathf.Min(rot, beforeRot);
+            
+            var cols = Physics2D.OverlapCircleAll(transform.position, radius, mask);
+            foreach(var col in cols)
+            {
+                var colAxis = col.gameObject.transform.position - transform.position;
+                var colRot = Mathf.Atan2(colAxis.y, colAxis.x) * Mathf.Rad2Deg;
+
+                if(!ExtraMath.IsAngleBetween(colRot, minRot, maxRot)) continue;
+
+                if(targetTags != null && !targetTags.Contains(col.gameObject.tag)) continue;
+                Damageable damageable = col.gameObject.GetComponent<Damageable>();
+                if(damageable == this || damageable == null) continue;
+                if(alreadyDamaged.Contains(damageable)) continue;
+                Attack(damageable, Attribute, type, knockback);
+                alreadyDamaged.Add(damageable);
+            }
+
+            beforeRot = rot;
+        }
+        print("attack end");
     }
 
     public void DisplayFloatingItem(Sprite sprite, float angle=0, float itemAngle=0) {
@@ -103,6 +168,7 @@ public class Player : LivingEntity
 
     private void InventoryUpdate()
     {
+        if(IsDead) return;
         for (var i = 0; i < _slots.Length; i++)
         {
             var slotInfo = _slots[i];
@@ -113,20 +179,20 @@ public class Player : LivingEntity
             slotInfo.ItemCount.SetText(itemStack?.Amount.ToString());
         }
 
-        var scrollY = Input.mouseScrollDelta.y;
+        var scrollY = KeyInput.MouseScrollDelta.y;
         if (scrollY != 0)
         {
             Inventory.SelectedSlot = (byte)((Inventory.SelectedSlot + (scrollY > 0 ? -1 : 1) + HotbarSize) % HotbarSize);
         }
         for (byte i = 0; i < Mathf.Min(HotbarSize, AlphaKeys.Length); i++)
         {
-            if (Input.GetKeyDown(AlphaKeys[i])) Inventory.SelectedSlot = i;
+            if (KeyInput.GetKeyDown(AlphaKeys[i])) Inventory.SelectedSlot = i;
         }
 
         _slotSelector.localPosition = Vector3.right * (HotbarSize * _slotWidth * -0.5f + (Inventory.SelectedSlot + .5f) * _slotWidth);
 
         for(var i = 0; i <= 1; i++) {
-            if(Input.GetMouseButtonDown(i)) {
+            if(KeyInput.GetMouseButton(i)) {
                 Inventory.UseItem(Inventory.SelectedSlot, i);
             }
         }
@@ -136,17 +202,17 @@ public class Player : LivingEntity
 
     private void UIUpdate()
     {
-        _hpText.SetText(string.Format("{0}%", (int)Mathf.Ceil(Hp)));
-        _hpBarImg.fillAmount = Mathf.Clamp01(Hp / MaxHp);
-        var hs = _hpBarObject.transform.localScale;
-        hs.x = Mathf.Clamp01(Hp / MaxHp);
-        _hpBarObject.transform.localScale = hs;
+        var MaxLife = Attribute.GetValue(AttributeType.MaxLife);
+        var MaxMana = Attribute.GetValue(AttributeType.MaxMana);
+        var MaxStamina = Attribute.GetValue(AttributeType.MaxStamina);
 
-        _mpText.SetText(string.Format("{0}%", (int)Mathf.Ceil(Mp)));
-        _mpBarImg.fillAmount = Mathf.Clamp01(Mp / MaxMp);
-        var ms = _mpBarObject.transform.localScale;
-        ms.x = Mathf.Clamp01(Mp / MaxMp);
-        _mpBarObject.transform.localScale = ms;
+        _lifeBarImg.fillAmount = Mathf.Clamp01(Life / MaxLife);
+        _miniLifeBarImg.fillAmount = Mathf.Clamp01(Life / MaxLife);
+
+        _manaBarImg.fillAmount = Mathf.Clamp01(Mana / MaxMana);
+        _miniManaBarImg.fillAmount = Mathf.Clamp01(Mana / MaxMana);
+
+        _staminaBarImg.fillAmount = Mathf.Clamp01(Stamina / MaxStamina);
     }
 
     public void Sweep() {
@@ -166,10 +232,6 @@ public class Player : LivingEntity
         return _sweepAnimator.gameObject.activeSelf;
     }
 
-    public void AttackNearbyEnemy<E>(float radius, int maxEnemyCnt) {
-        
-    }
-
     private IEnumerator StopSweep() {
         var length  = _sweepAnimator.GetCurrentAnimatorStateInfo(0).length;
         var rot = _floatingItem.gameObject.transform.rotation.eulerAngles;
@@ -185,33 +247,21 @@ public class Player : LivingEntity
 
     protected override void Move()
     {
-        if (Input.GetKey(KeyCode.W)) axis += Vector2.up;
-        if (Input.GetKey(KeyCode.A)) axis += Vector2.left;
-        if (Input.GetKey(KeyCode.S)) axis += Vector2.down;
-        if (Input.GetKey(KeyCode.D)) axis += Vector2.right;
+        if (KeyInput.GetKey(KeyCode.W)) axis += Vector2.up;
+        if (KeyInput.GetKey(KeyCode.A)) axis += Vector2.left;
+        if (KeyInput.GetKey(KeyCode.S)) axis += Vector2.down;
+        if (KeyInput.GetKey(KeyCode.D)) axis += Vector2.right;
 
-        var runSpeed = 1f;
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            runSpeed = 1.5f;
-            Mp -= 3 * Time.deltaTime;
-        }
+        var maxStamina = Attribute.GetValue(AttributeType.MaxStamina);
 
-        if (curState == Name + "Walk_Left" || curState == Name + "Walk_Right")
+        if (KeyInput.GetKey(KeyCode.LeftShift) && Stamina >= 20)
         {
-            var s = _collider.size;
-            s.x = _originalColSize.x * 0.43f;
-            _collider.size = s;
-            _collider.offset = _originalColOffset + Vector2.right * (axis.x > 0 ? 1 : -1) * -0.07f;
+            Attribute.AddModifier(new(AttributeType.MoveSpeed, AttributeModifier.Type.Multiply, 1.5f));
+            Stamina -= (Attribute.GetDefaultValue(AttributeType.StaminaRegen) + 7) * Time.deltaTime;
+            if(Stamina < maxStamina * .2f) {
+                Stamina = 0f;
+            }
         }
-        else
-        {
-            _collider.size = _originalColSize;
-            _collider.offset = _originalColOffset;
-        }
-
-        var originMoveSpeed = MoveSpeed;
-        MoveSpeed *= runSpeed;
 
         base.Move();
     }

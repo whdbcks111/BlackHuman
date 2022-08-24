@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Block
   layers:
   - Default
   - TransparentFX
@@ -12,12 +13,12 @@ TagManager:
   - Water
   - UI
   - OnlyMinimap
-  - Profile
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Passing
+  - Light
+  - Invisible
+  - Wall
+  - Player
+  - Enemy
   - 
   - 
   - 
@@ -38,6 +39,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Wall
+    uniqueID: 209639899
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0

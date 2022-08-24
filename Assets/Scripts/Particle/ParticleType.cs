@@ -1,5 +1,5 @@
 public enum ParticleType 
 {
-    WhiteSmoke,
-    
+    Smoke,
+    HorizontalExplode
 }

@@ -9,23 +9,28 @@ public abstract class Enumeration : IComparable
 
     public int Id { get; private set; }
 
-    protected Enumeration(int id, string name) => (Id, Name) = (id, name);
+    protected Enumeration(string name) 
+    {
+        Name = name;
+        Id = name.GetHashCode();
+    }
 
     public override string ToString() => Name;
 
-    public static IEnumerable<T> GetAll<T>() where T : Enumeration, new()
+    public static List<T> GetAll<T>() where T : Enumeration
     {
+        List<T> result = new();
         var fields = typeof(T).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
         foreach (var info in fields)
         {
-            var instance = new T();
-            var locatedValue = info.GetValue(instance) as T;
+            var locatedValue = info.GetValue(null);
 
-            if (locatedValue != null)
+            if (locatedValue != null && locatedValue is T)
             {
-                yield return locatedValue;
+                result.Add(locatedValue as T);
             }
         }
+        return result;
     }
 
     public override bool Equals(object obj)

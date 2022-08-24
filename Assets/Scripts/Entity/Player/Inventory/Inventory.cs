@@ -40,6 +40,20 @@ public class Inventory
         else return _contents[slot].Amount;
     }
 
+    public bool HasItem(ItemType type, int amount = 1)
+    {
+        if(type == null) return false;
+        foreach(var item in _contents)
+        {
+            if(item != null && item.ItemType == type) 
+            {
+                amount -= item.Amount;
+            }
+            if(amount <= 0) return true;
+        }
+        return false;
+    }
+
     public int AddItemStack(ItemStack itemStack, int amount = 1)
     {
         var maxAmount = itemStack.ItemType.MaxAmount;
@@ -82,7 +96,11 @@ public class Inventory
     public void UseItem(int slot, int mouseBtn)
     {
         var itemStack = GetItemStack(slot);
-        if (itemStack == null || itemStack.ItemType.OnUse == null) return;
+        if (itemStack == null || itemStack.ItemType.OnUse == null) 
+        {
+            if(mouseBtn == 0) Player.Instance.AttackNearby(1.5f, 1);
+            return;
+        }
         var result = itemStack.ItemType.OnUse(mouseBtn, itemStack);
         if(result) SetItemAmount(slot, GetItemAmount(slot) - 1);
     }

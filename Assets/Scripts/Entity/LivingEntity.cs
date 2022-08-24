@@ -3,104 +3,42 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class LivingEntity : MonoBehaviour
+public class LivingEntity : Damageable
 {
-    public const float DefaultMoveSpeed = 3.0f, 
-            DefaultHp = 100f, 
-            DefaultMp = 100f, 
-            DefaultAttackSpeed = 1f,
-            DefaultAttackDamage = 12f;
+    public readonly Dictionary<string, object> Extras = new();
 
     [SerializeField]
     protected Animator animator;
     [SerializeField]
     protected Rigidbody2D rigid;
-    [SerializeField]
-    protected SpriteRenderer spriteRenderer;
 
 
     private string _name;
     public bool IsDead { get; private set; }
     public string Name { get { return _name; } set { _name = value; } }
     public string curState { get; private set; }
-    private float _hp = DefaultHp, _mp = DefaultMp;
+
+    private float _mana, _stamina;
     [HideInInspector]
-    public float MoveSpeed = DefaultMoveSpeed, AttackSpeed = DefaultAttackSpeed;
+    public float Mana { get { return _mana; } set { _mana = Mathf.Clamp(value, 0, Attribute.GetValue(AttributeType.MaxMana)); } }
     [HideInInspector]
-    public float AttackDamage = DefaultAttackDamage;
-    [HideInInspector]
-    public float MaxHp = DefaultHp, MaxMp = DefaultMp;
-    [HideInInspector]
-    public float Hp { get { return _hp; } set { _hp = Mathf.Clamp(value, 0, MaxHp); } }
-    [HideInInspector]
-    public float Mp { get { return _mp; } set { _mp = Mathf.Clamp(value, 0, MaxMp); } }
+    public float Stamina { get { return _stamina; } set { _stamina = Mathf.Clamp(value, 0, Attribute.GetValue(AttributeType.MaxStamina)); } }
+
     protected Vector2 axis = Vector2.zero;
     private Vector2 _force;
-    private float _latestAttack = -1;
+    protected float latestAttack = -1;
 
-    protected void ChangeAnimationState(string state)
+    protected override void Awake()
     {
-        if (curState == state) return;
-        
-        animator.Play(state);
-        curState = state;
+        base.Awake();
+        InitializeDefaults();
     }
 
-    public virtual void AttackNearby(float radius, int count = 1, bool knockback = true, string[] targetTags = null)
+    protected override void Start()
     {
-        if(!IsAttackEnded()) return;
-        _latestAttack = Time.time;
-        var colliders = Physics2D.OverlapCircleAll(transform.position, radius);
-        HashSet<LivingEntity> alreadyDamaged = new();
-        foreach(var collider in colliders)
-        {
-            if(targetTags != null && !targetTags.Contains(collider.gameObject.tag)) continue;
-            LivingEntity entity = collider.gameObject.GetComponent<LivingEntity>();
-            if(entity == this || entity == null || alreadyDamaged.Contains(entity)) continue;
-            entity.ShowDamageEffect();
-            entity.Damage(15);
-            alreadyDamaged.Add(entity);
-            if(knockback) entity.AddForce(entity.transform.position - transform.position, 7);
-        }
-    }
-
-    public virtual void Damage(float amount) {
-        Hp -= amount;
-    }
-
-    public bool IsAttackEnded() 
-    {
-        return _latestAttack < 0 || Time.time - _latestAttack > 1f / AttackSpeed;
-    }
-
-    public void AddForce(Vector2 axis, float force) {
-        _force += axis.normalized * force;
-    }
-
-    protected void ShowDamageEffect()
-    {
-        StopCoroutine(nameof(ShowDamageEffectCoroutine));
-        StartCoroutine(nameof(ShowDamageEffectCoroutine), .5f);
-    }
-
-    private IEnumerator ShowDamageEffectCoroutine(float time)
-    {
-        var ratio = 1f;
-        while (ratio > 0f)
-        {
-            spriteRenderer.color = Color.Lerp(Color.white, Color.red, ratio);
-            ratio -= Time.deltaTime / time;
-            yield return null;
-        }
-        spriteRenderer.color = Color.white;
-    }
-
-    protected virtual void Awake()
-    {
-    }
-
-    protected virtual void Start()
-    {
+        base.Start();
+        Mana = Attribute.GetValue(AttributeType.MaxMana);
+        Stamina = Attribute.GetValue(AttributeType.MaxMana);
         ChangeAnimationState(Name + "Idle");
     }
 
@@ -109,33 +47,73 @@ public class LivingEntity : MonoBehaviour
         OnUpdate();
         OnLateUpdate();
     }
+    
+    protected void ChangeAnimationState(string state)
+    {
+        if (curState == state) return;
+        animator.Play(state);
+        curState = state;
+    }
+
+    public virtual void Attack(Damageable damageable, Attribute attribute, DamageType type = DamageType.Normal, bool knockback = true)
+    {
+        latestAttack = Time.time;
+        AttackSound();
+        if(damageable is LivingEntity ent && ent.IsDead) return;
+        damageable.Hit(attribute, type);
+        if(knockback && damageable is LivingEntity livingEntity) 
+            livingEntity.AddForce(damageable.transform.position - transform.position, Attribute.GetValue(AttributeType.Knockback));
+    }
+
+    public virtual void AttackNearby(float radius, int count = 1, DamageType type = DamageType.Normal, bool knockback = true, string[] targetTags = null)
+    {
+        if(!IsAttackEnded()) return;
+        latestAttack = Time.time;
+        var colliders = Physics2D.OverlapCircleAll(transform.position, radius, ~LayerMask.GetMask("Passing"));
+        HashSet<Damageable> alreadyDamaged = new();
+        foreach(var collider in colliders)
+        {
+            Damageable damageable = collider.gameObject.GetComponent<Damageable>();
+            if(targetTags != null && !targetTags.Contains(collider.gameObject.tag)) continue;
+            if(damageable == this || damageable == null || alreadyDamaged.Contains(damageable)) continue;
+            if(damageable is LivingEntity ent && ent.IsDead) continue;
+            Attack(damageable, Attribute, type, knockback);
+            alreadyDamaged.Add(damageable);
+        }
+    }
+
+    protected virtual void AttackSound()
+    {
+    }
+
+    public bool IsAttackEnded() 
+    {
+        return latestAttack < 0 || Time.time - latestAttack > 1f / Attribute.GetValue(AttributeType.AttackSpeed);
+    }
+
+    public void AddForce(Vector2 axis, float force) {
+        _force += axis.normalized * force;
+    }
+
+    public void SetForce(Vector2 axis, float force) {
+        _force = axis.normalized * force;
+    }
 
     protected virtual void OnEarlyUpdate()
     {
-        ResetValues();
     }
 
     protected virtual void OnUpdate()
     {
-        if(Hp <= 0f && !IsDead) {
+        if(Life <= 0f && !IsDead) {
             Kill();
         }
-    }
-
-    protected virtual void ResetValues()
-    {
-        MaxMp = DefaultMp;
-        MaxHp = DefaultHp;
-        MoveSpeed = DefaultMoveSpeed;
-        AttackDamage = DefaultAttackDamage;
-        AttackSpeed = DefaultAttackSpeed;
     }
 
     protected virtual void Kill()
     {
         IsDead = true;
         rigid.velocity = Vector3.zero;
-        StopCoroutine(nameof(ShowDamageEffectCoroutine));
         StartCoroutine(nameof(KillEffect));
     }
 
@@ -147,44 +125,52 @@ public class LivingEntity : MonoBehaviour
         {
             var toChange = Color.Lerp(c, targetCol, i);
             toChange.a = Mathf.Lerp(c.a, targetCol.a, i);
-            spriteRenderer.color = toChange;
+            colors.Enqueue(toChange);
             yield return null;
         }
-        ParticleManager.Instance.SpawnParticle(transform.position, ParticleType.WhiteSmoke, .7f);
+        spriteRenderer.color = Color.clear;
+        originalColor = Color.clear;
+        ParticleManager.Instance.SpawnParticle(transform.position, ParticleType.Smoke, 1f, 0, 9);
     }
 
     protected virtual void OnLateUpdate()
     {
         ValueUpdate();
         if(!IsDead) Move();
+
+        Attribute.OnLateUpdate();
+        ColorUpdate();
     }
 
     protected virtual void Move()
     {
-        if (Mathf.Abs(axis.normalized.x) > 0.7f)
+        if (axis.magnitude > 0.1f)
         {
-            ChangeAnimationState(Name + (axis.x > 0 ? "Walk_Right" : "Walk_Left"));
+            ChangeAnimationState(Name + "Walk");
+            spriteRenderer.flipX = axis.x < 0;
         }
-        else
+        else 
         {
-            if (Mathf.Abs(axis.normalized.y) > 0.1f)
-            {
-                ChangeAnimationState(Name + (axis.y > 0 ? "Walk_Up" : "Walk_Down"));
-            }
-            else
-            {
-                ChangeAnimationState(Name + "Idle");
-            }
+            ChangeAnimationState(Name + "Idle");
         }
 
-        rigid.velocity = axis.normalized * MoveSpeed + _force;
+        rigid.velocity = axis.normalized * Attribute.GetValue(AttributeType.MoveSpeed) + _force;
         _force *= Mathf.Pow(0.1f, Time.deltaTime);
         axis = Vector2.zero;
     }
 
     protected virtual void ValueUpdate()
     {
-        if (Hp > 0) Hp += 0.5f * Time.deltaTime;
-        Mp += 1 * Time.deltaTime;
+        var maxStamina = Attribute.GetValue(AttributeType.MaxStamina);
+
+        if (Life > 0) Life += Attribute.GetValue(AttributeType.LifeRegen) * Time.deltaTime;
+        Mana += Attribute.GetValue(AttributeType.ManaRegen) * Time.deltaTime;
+        Stamina += Attribute.GetValue(AttributeType.StaminaRegen) * Time.deltaTime;
+
+        if(Stamina < maxStamina * .2f)
+        {
+            Attribute.AddModifier(new(AttributeType.MoveSpeed, AttributeModifier.Type.Multiply, 0.6f));
+            Attribute.AddModifier(new(AttributeType.StaminaRegen, AttributeModifier.Type.Multiply, 0.2f));
+        }
     }
 }
