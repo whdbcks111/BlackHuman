@@ -6,13 +6,14 @@ public class Fireball : Projectile
 {
     protected override void OnCollision(Damageable entity)
     {
-        base.OnCollision(entity); 
+        base.OnCollision(entity);
+        if(entity is LivingEntity living) living.AddEffect(EffectType.Fire, 1, 5, self);
         // SoundManager.Instance.PlayOneShot("Slime_" + Random.Range(1, 2 + 1), 2f);
     }
 
-    protected override void Start()
+    public override void Init()
     {
-        base.Start();
+        base.Init();
         StartCoroutine(ParticleCoroutine());
     }
 

@@ -4,10 +4,7 @@ using UnityEngine;
 
 public class KingSlime : Boss
 {
-    private static int s_passingLayer = -1, s_originalLayer = -1;
 
-    [SerializeField]
-    private GameObject _sprite;
 
     private bool _doFollowPlayer = true;
     private int _pattern = 0;
@@ -15,11 +12,9 @@ public class KingSlime : Boss
     protected override void Awake() 
     {
         base.Awake();
-        Name = "KingSlime";
         lifeBack.transform.localPosition = Vector2.up * 1.6f;
+        DropGoldAmount = 100;
 
-        if(s_originalLayer == -1) s_originalLayer = gameObject.layer;
-        if(s_passingLayer == -1) s_passingLayer = LayerMask.NameToLayer("Passing");
     }
 
     protected override void InitializeDefaults()
@@ -27,8 +22,8 @@ public class KingSlime : Boss
         base.InitializeDefaults();
         Attribute.SetDefaultValue(AttributeType.MoveSpeed, 1.5f);
         Attribute.SetDefaultValue(AttributeType.AttackSpeed, 1.5f);
-        Attribute.SetDefaultValue(AttributeType.AttackDamage, 20f);
-        Attribute.SetDefaultValue(AttributeType.MaxLife, 2000);
+        Attribute.SetDefaultValue(AttributeType.AttackDamage, 15f);
+        Attribute.SetDefaultValue(AttributeType.MaxLife, 1500);
     }
 
     protected override void AttackSound()
@@ -56,7 +51,7 @@ public class KingSlime : Boss
                 case 0:
                     for(var i = 0; i < 6; i++)
                     {
-                        yield return new WaitForSeconds(.55f);
+                        yield return YieldCache.WaitForSeconds(.55f);
                         for(var j = 0f; j < 360f; j += 90f)
                         {
                             var p = Projectile.SpawnProjectile(transform.position, 
@@ -67,7 +62,7 @@ public class KingSlime : Boss
                         }
                         SoundManager.Instance.PlayOneShot("Slime_" + Random.Range(1, 2 + 1), 0.9f);
                     }
-                    yield return new WaitForSeconds(3f);
+                    yield return YieldCache.WaitForSeconds(3f);
                     _pattern = 1;
                     break;
                 case 1:
@@ -75,7 +70,7 @@ public class KingSlime : Boss
                     var angle = Mathf.Atan2(axis.y, axis.x) * Mathf.Rad2Deg;
                     for(var i = 0f; i < 360f; i += 15f)
                     {
-                        yield return new WaitForSeconds(.2f);
+                        yield return YieldCache.WaitForSeconds(.2f);
                         for(var j = 0f; j < 360f; j += 180f)
                         {
                             var p = Projectile.SpawnProjectile(transform.position, 
@@ -86,45 +81,23 @@ public class KingSlime : Boss
                             SoundManager.Instance.PlayOneShot("Slime_" + Random.Range(1, 2 + 1), 0.6f);
                         }
                     }
-                    yield return new WaitForSeconds(3f);
+                    yield return YieldCache.WaitForSeconds(3f);
                     _pattern = 2;
                     break;
                 case 2:
 
                     for(var r = 0; r < 3; r++)
                     {
-                        yield return new WaitForSeconds(0.5f);
-                        var originalSpeed = animator.speed;
-                        animator.speed = 0f;
-                        gameObject.layer = s_passingLayer;
-                        for(var i = 0f; i < 1f; i += Time.deltaTime)
+                        yield return YieldCache.WaitForSeconds(0.7f);
+
+                        Jump(20f);
+                        while(IsJumping)
                         {
                             yield return null;
-                            Attribute.AddModifier(new(AttributeType.MoveSpeed, AttributeModifier.Type.Add, 5));
-                            _sprite.transform.localPosition += Vector3.up * i * Time.deltaTime * 30f;
+                            Attribute.AddModifier(new(AttributeType.MoveSpeed, AttributeModifier.Type.Add, 5.5f));
                         }
 
-                        var wait = Random.Range(0f, 2f);
-                        
-                        while(wait > 0f)
-                        {
-                            wait -= Time.deltaTime;
-                            yield return null;
-                            Attribute.AddModifier(new(AttributeType.MoveSpeed, AttributeModifier.Type.Add, 5));
-                        }
-
-                        yield return new WaitForSeconds(0.1f);
-
-                        while(_sprite.transform.localPosition.y > 0.05)
-                        {
-                            yield return null;
-                            _sprite.transform.localPosition = Vector3.Lerp(_sprite.transform.localPosition, 
-                                    Vector3.zero, 0.1f);
-                        }
-                        _sprite.transform.localPosition = Vector3.zero;
-                        gameObject.layer = s_originalLayer;
-
-                        animator.speed = originalSpeed;
+                        yield return YieldCache.WaitForSeconds(0.1f);
 
                         ParticleManager.Instance.SpawnParticle(transform.position + Vector3.down * Size.x * 0.5f, 
                                 ParticleType.HorizontalExplode, Color.white, 1, 0, 20);
@@ -150,7 +123,7 @@ public class KingSlime : Boss
                         }
                         SoundManager.Instance.PlayOneShot("Slime_" + Random.Range(1, 2 + 1), 0.9f);
 
-                        yield return new WaitForSeconds(2.1f);
+                        yield return YieldCache.WaitForSeconds(2.1f);
                     }
 
                     _pattern = 4;
@@ -177,7 +150,7 @@ public class KingSlime : Boss
     {
         base.OnUpdate();
         if(_doFollowPlayer) FollowPlayer();
-        if(gameObject.layer != s_passingLayer) AttackNearby(.4f + Size.x * .5f, 1, DamageType.Normal, true, new[] { "Player" });
+        AttackNearby(.4f + Size.x * .5f, 1, DamageType.Normal, true, new[] { "Player" });
     }
 
     protected override IEnumerator KillEffect()

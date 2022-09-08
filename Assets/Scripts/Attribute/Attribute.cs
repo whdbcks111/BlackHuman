@@ -18,6 +18,14 @@ public class Attribute
         ResetValues();
     }
 
+    public static Attribute Damage(float amount)
+    {
+        Attribute attr = new();
+        attr.SetDefaultValue(AttributeType.AttackDamage, amount);
+        attr.SetDefaultValue(AttributeType.MagicDamage, amount);
+        return attr;
+    }
+
     public float GetValue(AttributeType type)
     {
         return (GetDefaultValue(type) + additionValues[type]) * multiplyValues[type];

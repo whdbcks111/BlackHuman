@@ -20,6 +20,12 @@ public class TreasureBox : Block
         }
     }
 
+    protected override void InitializeDefaults()
+    {
+        base.InitializeDefaults();
+        Attribute.SetDefaultValue(AttributeType.MaxLife, 80f);
+    }
+
     public override void Hit(Attribute attribute, DamageType type = DamageType.Normal)
     {
         base.Hit(attribute, type);
@@ -32,11 +38,11 @@ public class TreasureBox : Block
         ParticleManager.Instance.SpawnParticle(transform.position, ParticleType.Smoke, GoldColor, 1, 0, 40);
         Destroy(gameObject);
         var types = ItemType.GetAll<ItemType>();
-        ItemType type = ItemType.Sword;
-        for(var i = 0; i < 10 && Player.Instance.Inventory.HasItem(type); i++)
+        ItemType type = null;
+        for(var i = 0; i < 10 && (Player.Instance.Inventory.HasItem(type) || type == null); i++)
         {
             type = types[Random.Range(0, types.Count)];
         }
-        Player.Instance.Inventory.AddItemStack(new(type), 1);
+        if(type != null) Player.Instance.Inventory.AddItemStack(new(type));
     }
 }

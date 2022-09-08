@@ -36,6 +36,7 @@ public enum RoomType
 {
     Monster,
     Treasure,
+    Shop,
     Boss,
     None
 }

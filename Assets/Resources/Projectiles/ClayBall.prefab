@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 6
   m_Sprite: {fileID: 21300000, guid: b14e5008374c1a24985b886ea9fc818e, type: 3}
-  m_Color: {r: 0.735849, g: 0.35592705, b: 0.27351367, a: 1}
+  m_Color: {r: 0.754717, g: 0.47026807, b: 0.40868637, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -114,14 +114,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ad0574eb13cb1548a9311e28c6f02fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MoveSpeed: 10
-  RotateSpeed: 0
+  MoveSpeed: 7
+  RotateSpeed: 20
   MoveAcceleration: -30
   RotateAcceleration: 0
   Duration: 30
-  MinSpeed: 3
+  MinSpeed: 4
   MaxSpeed: 100
   RotateBackwards: 0
   DestoryInCollision: 1
   DestroyInWall: 1
+  DestroyInBlock: 0
+  DamageOnce: 0
   MoveAxis: {x: 0, y: 0}

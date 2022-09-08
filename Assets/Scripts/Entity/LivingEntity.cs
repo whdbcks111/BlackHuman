@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class LivingEntity : Damageable
+public abstract class LivingEntity : Damageable
 {
     public readonly Dictionary<string, object> Extras = new();
 
@@ -12,6 +12,8 @@ public class LivingEntity : Damageable
     [SerializeField]
     protected Rigidbody2D rigid;
 
+
+    public static int PassingLayer = -1, OriginalLayer = -1;
 
     private string _name;
     public bool IsDead { get; private set; }
@@ -23,15 +25,32 @@ public class LivingEntity : Damageable
     public float Mana { get { return _mana; } set { _mana = Mathf.Clamp(value, 0, Attribute.GetValue(AttributeType.MaxMana)); } }
     [HideInInspector]
     public float Stamina { get { return _stamina; } set { _stamina = Mathf.Clamp(value, 0, Attribute.GetValue(AttributeType.MaxStamina)); } }
+    public bool IsJumping
+    {
+        get 
+        {
+            return JumpVelocity > 0f || spriteRenderer.transform.localPosition.y > 0;
+        }
+        private set {}
+    }
 
     protected Vector2 axis = Vector2.zero;
     private Vector2 _force;
+    private float _jumpVelocity = 0f;
+    public float JumpVelocity { get { return _jumpVelocity; } private set { _jumpVelocity = value; } }
     protected float latestAttack = -1;
+
+    protected List<Effect> effects = new();
+    private Queue<Effect> _removeEffects = new();
 
     protected override void Awake()
     {
         base.Awake();
+        Name = GetType().ToString();
         InitializeDefaults();
+
+        if(OriginalLayer == -1) OriginalLayer = gameObject.layer;
+        if(PassingLayer == -1) PassingLayer = LayerMask.NameToLayer("Passing");
     }
 
     protected override void Start()
@@ -47,16 +66,55 @@ public class LivingEntity : Damageable
         OnUpdate();
         OnLateUpdate();
     }
+
+    public virtual Effect AddEffect(EffectType type, int level, float duration, LivingEntity caster)
+    {
+        Effect newEff = new(type, level, duration, this, caster);
+        foreach(var eff in effects)
+        {
+            if(eff.Type == newEff.Type)
+            {
+                if(eff.Level < newEff.Level || (eff.Level == newEff.Level && eff.Duration < newEff.Duration))
+                {
+                    RemoveEffect(eff);
+                    break;
+                }
+                else return null;
+            }
+        }
+        newEff.Type.OnEffectStart(newEff);
+        if(newEff.Duration <= 0f) 
+        {
+            newEff.Type.OnEffectFinish(newEff);
+            return null;
+        }
+        effects.Add(newEff);
+        return newEff;
+    }
+
+    public virtual void RemoveEffect(Effect eff)
+    {
+        eff.Type.OnEffectFinish(eff);
+        _removeEffects.Enqueue(eff);
+    }
+
+    public void RemoveEffect(EffectType type)
+    {
+        foreach(var eff in effects) 
+        {
+            if(eff.Type == type) RemoveEffect(eff);
+        }
+    }
     
     protected void ChangeAnimationState(string state)
     {
         if (curState == state) return;
-        animator.Play(state);
-        curState = state;
+        animator.Play(curState = state);
     }
 
     public virtual void Attack(Damageable damageable, Attribute attribute, DamageType type = DamageType.Normal, bool knockback = true)
     {
+        if(gameObject.layer == PassingLayer) return;
         latestAttack = Time.time;
         AttackSound();
         if(damageable is LivingEntity ent && ent.IsDead) return;
@@ -101,13 +159,26 @@ public class LivingEntity : Damageable
 
     protected virtual void OnEarlyUpdate()
     {
+
     }
 
     protected virtual void OnUpdate()
     {
-        if(Life <= 0f && !IsDead) {
-            Kill();
+        EffectUpdate();
+    }
+
+    protected virtual void EffectUpdate()
+    {
+        foreach(var eff in effects)
+        {
+            eff.Type.OnEffectUpdate(eff);
+            if((eff.Duration -= Time.deltaTime) <= 0) RemoveEffect(eff);
         }
+        foreach(var target in _removeEffects)
+        {
+            effects.Remove(target);
+        }
+        _removeEffects.Clear();
     }
 
     protected virtual void Kill()
@@ -135,11 +206,38 @@ public class LivingEntity : Damageable
 
     protected virtual void OnLateUpdate()
     {
+        if(Life <= 0f && !IsDead) {
+            Kill();
+        }
+
         ValueUpdate();
         if(!IsDead) Move();
+        JumpUpdate();
 
         Attribute.OnLateUpdate();
         ColorUpdate();
+    }
+
+    private void JumpUpdate()
+    {
+        var pos = spriteRenderer.transform.localPosition;
+        pos.y = Mathf.Max(0f, pos.y + JumpVelocity * Time.deltaTime);
+        if(pos.y > 0f) JumpVelocity -= 14 * Time.deltaTime;
+        else JumpVelocity = 0f;
+        spriteRenderer.transform.localPosition = pos;
+
+        gameObject.layer = pos.y > 0.3f ? PassingLayer : OriginalLayer;
+        animator.speed = IsJumping ? 0f : 1f;
+    }
+
+    public void Jump(float vel)
+    {
+        _jumpVelocity = vel;
+    }
+
+    public void AddColor(Color c)
+    {
+        colors.Enqueue(c);
     }
 
     protected virtual void Move()

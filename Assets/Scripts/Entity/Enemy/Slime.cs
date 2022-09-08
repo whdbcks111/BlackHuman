@@ -8,8 +8,8 @@ public class Slime : Enemy
     protected override void Awake() 
     {
         base.Awake();
-        Name = "Slime";
-        lifeBack.transform.localPosition = Vector2.up * .8f;
+        lifeBack.transform.localPosition = Size.y * Vector2.up * .25f;
+        DropGoldAmount = 3;
     }
 
     protected override void InitializeDefaults()

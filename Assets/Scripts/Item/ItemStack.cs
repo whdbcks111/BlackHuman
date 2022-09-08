@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class ItemStack
 {
+    public readonly Dictionary<string, object> Extras = new();
     public ItemType ItemType;
     private int _amount, _durability;
     public int Amount { get { return _amount; } set { _amount = Mathf.Clamp(value, 1, ItemType.MaxAmount); } }

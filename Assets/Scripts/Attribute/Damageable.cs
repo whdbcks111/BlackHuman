@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 
 public class Damageable : MonoBehaviour
 {
@@ -15,6 +16,9 @@ public class Damageable : MonoBehaviour
     
     [SerializeField]
     protected SpriteRenderer spriteRenderer;
+    [SerializeField]
+    public bool Invulerable = false;
+
 
     protected virtual void Awake()
     {
@@ -48,15 +52,44 @@ public class Damageable : MonoBehaviour
         }
     }
 
-    public virtual void Damage(Attribute attribute, DamageType type = DamageType.Normal, bool isCritical = false)
+    public virtual void Damage(Attribute attribute, DamageType type = DamageType.Normal, 
+            bool isCritical = false, bool displayDamage = false)
     {
-        Life -= GetDamage(type, attribute, Attribute) * (isCritical ? Attribute.GetValue(AttributeType.CriticalDamage) / 100f + 1 : 1);
+        if(Invulerable) return;
+        var finalDamage = GetDamage(type, attribute, Attribute) 
+                * (isCritical ? Attribute.GetValue(AttributeType.CriticalDamage) / 100f + 1 : 1);
+        Life -= finalDamage;
+        if(displayDamage && GameManager.Instance.CanDisplayDamage())
+        {
+            GameManager.Instance.StartCoroutine(DisplayDamageCoroutine(finalDamage, isCritical));
+        }
+    }
+
+    private IEnumerator DisplayDamageCoroutine(float finalDamage, bool isCritical)
+    {
+        var damageText = ObjectPool.Instance.GetDamageText();
+        damageText.SetText(string.Format("{0:0.0}", finalDamage));
+        damageText.color = isCritical ? new Color(1, .2f, .2f) : Color.white;
+        damageText.rectTransform.position = transform.position + Vector3.up * 0.8f;
+        float vel = 3f;
+        Color col;
+        // 텍스트 움직임(중력)과 페이드 아웃 
+        for(var t = 0f; t < .6f; t += Time.deltaTime)
+        {
+            damageText.rectTransform.position += Vector3.up * vel * Time.deltaTime;
+            col = damageText.color;
+            col.a = Mathf.Clamp01(1 - t / 0.6f);
+            damageText.color = col;
+            vel -= Time.deltaTime * 15f;
+            yield return null;
+        }
+        ObjectPool.Instance.DestroyDamageText(damageText);
     }
 
     public virtual void Hit(Attribute attribute, DamageType type = DamageType.Normal)
     {
-        ShowDamageEffect();
-        Damage(attribute, type, Random.value <= Attribute.GetValue(AttributeType.CriticalChance) / 100f);
+        if(!Invulerable) ShowDamageEffect();
+        Damage(attribute, type, Random.value <= Attribute.GetValue(AttributeType.CriticalChance) / 100f, true);
         HitSound();
     }
 

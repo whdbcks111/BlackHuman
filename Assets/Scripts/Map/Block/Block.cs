@@ -8,6 +8,9 @@ public class Block : Damageable
 {
 
     public static Dictionary<Vector2Int, Block> Blocks = new();
+    
+    [SerializeField]
+    private float _defaultLife = 200f;
 
     private Vector2Int _pos;
     public Vector2Int Pos { 
@@ -15,6 +18,7 @@ public class Block : Damageable
             return _pos;
         } 
         set {
+            if(Storage.Get<Tilemap>("FloorTilemap").GetTile((Vector3Int)value) == null) return;
             Blocks.Remove(_pos);
             Blocks[value] = this;
             _pos = value;
@@ -35,6 +39,13 @@ public class Block : Damageable
         _icon = Instantiate(Resources.Load<GameObject>("Blocks/BlockIcon"), transform);
     }
 
+    protected override void InitializeDefaults()
+    {
+        base.InitializeDefaults();
+        Attribute.SetDefaultValue(AttributeType.LifeRegen, 0f);
+        Attribute.SetDefaultValue(AttributeType.MaxLife, _defaultLife);
+    }
+
     protected override void Start() {
         base.Start();
         Pos = (Vector2Int)Vector3Int.FloorToInt(Storage.Get<Tilemap>("FloorTilemap").CellToWorld(Vector3Int.FloorToInt(transform.position)));
@@ -42,6 +53,7 @@ public class Block : Damageable
 
     public static Block SetBlock(Vector2Int pos, GameObject block)
     {
+        if(Storage.Get<Tilemap>("FloorTilemap").GetTile((Vector3Int)pos) == null) return null;
         if(Blocks.ContainsKey(pos)) Destroy(Blocks[pos].gameObject);
         var newBlock = Instantiate(block, Storage.Get("BlockContainer").transform).GetComponent<Block>();
         newBlock.Pos = pos;

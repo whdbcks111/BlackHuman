@@ -9,21 +9,24 @@ public class Projectile : MonoBehaviour
 
     private static int s_wallLayer = -1;
 
+    public string Name { get; private set; }
     public Attribute Attribute = new();
     public float MoveSpeed, RotateSpeed, MoveAcceleration, RotateAcceleration, Duration, MinSpeed, MaxSpeed;
-    public bool RotateBackwards, DestoryInCollision, DestroyInWall;
+    public bool RotateBackwards, DestoryInCollision, DestroyInWall, DestroyInBlock, DamageOnce;
     public Vector2 MoveAxis;
 
     protected string[] targetTags;
     protected LivingEntity self;
 
+    private HashSet<Damageable> _damaged = new();
+
     public static Projectile SpawnProjectile(Vector3 pos, string name, LivingEntity self, string[] targetTags = null)
     {
-        var obj = Instantiate(Resources.Load<GameObject>("Projectiles/" + name), pos, Quaternion.identity);
-        obj.transform.SetParent(Storage.Get("ProjectileContainer").transform);
-        var p = obj.GetComponent<Projectile>();
+        var p = ObjectPool.Instance.GetProjectile(name, pos);
+        p.transform.SetParent(Storage.Get("ProjectileContainer").transform);
         p.self = self;
         p.targetTags = targetTags;
+        p.Name = name;
         return p;
     }
 
@@ -35,17 +38,17 @@ public class Projectile : MonoBehaviour
     protected virtual void Awake()
     {
         if (s_wallLayer == -1) s_wallLayer = LayerMask.NameToLayer("Wall");
-        StartCoroutine(DestroyCoroutine());
     }
 
-    protected virtual void Start()
+    public virtual void Init()
     {
-        transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(MoveAxis.y, MoveAxis.x) * Mathf.Rad2Deg);
+        _damaged.Clear();
+        StartCoroutine(DestroyCoroutine());
     }
 
     protected virtual void Update()
     {
-        transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(MoveAxis.y, MoveAxis.x) * Mathf.Rad2Deg);
+        transform.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(MoveAxis.y, MoveAxis.x) * Mathf.Rad2Deg);
         transform.Translate(MoveAxis.normalized * MoveSpeed * Time.deltaTime, Space.World);
 
         MoveSpeed += MoveAcceleration * Time.deltaTime;
@@ -64,14 +67,17 @@ public class Projectile : MonoBehaviour
         if (damageable != null && damageable != self)
         {
             if (damageable is LivingEntity && targetTags != null && !targetTags.Contains(other.gameObject.tag)) return;
-            if (DestoryInCollision) Destroy(gameObject);
-            OnCollision(damageable);
+            if (DestoryInCollision) ObjectPool.Instance.DestroyProjectile(this);
+            if (DestroyInBlock && damageable is Block) Destroy(gameObject);
+            if (DamageOnce && _damaged.Contains(damageable)) return;
+            if (!damageable.Invulerable) OnCollision(damageable);
+            _damaged.Add(damageable);
         }
         else if (other.gameObject.layer == s_wallLayer)
         {
-            if (DestoryInCollision) Destroy(gameObject);
-            else if (DestroyInWall) Destroy(gameObject);
             OnCollisionInWall();
+            if (DestoryInCollision) ObjectPool.Instance.DestroyProjectile(this);
+            else if (DestroyInWall) ObjectPool.Instance.DestroyProjectile(this);
         }
     }
 
@@ -87,10 +93,11 @@ public class Projectile : MonoBehaviour
     private IEnumerator DestroyCoroutine()
     {
         while (Duration > 0f)
-        {
+        { 
             yield return null;
             Duration -= Time.deltaTime;
         }
-        Destroy(gameObject);
+        ObjectPool.Instance.DestroyProjectile(this);
     }
+
 }

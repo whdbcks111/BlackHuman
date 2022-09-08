@@ -10,8 +10,8 @@ public class Mage : Enemy
     protected override void Awake() 
     {
         base.Awake();
-        Name = "Mage";
-        lifeBack.transform.localPosition = Vector2.up * .8f;
+        lifeBack.transform.localPosition = Vector2.up * 1f;
+        DropGoldAmount = 20;
     }
 
     protected override void InitializeDefaults()
@@ -44,7 +44,7 @@ public class Mage : Enemy
     {
         while(!IsDead)
         {
-            yield return new WaitForSeconds(1f);
+            yield return YieldCache.WaitForSeconds(1f);
             _timeAxis = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f));
         }
     }
@@ -53,12 +53,12 @@ public class Mage : Enemy
     {
         while(!IsDead)
         {
-            yield return new WaitForSeconds(Random.Range(2f, 4.5f));
+            yield return YieldCache.WaitForSeconds(Random.Range(2f, 4.5f));
             
             if(IsDead) break;
             for(var i = -1; i < 2; i++) 
             {
-                yield return new WaitForSeconds(0.2f);
+                yield return YieldCache.WaitForSeconds(0.2f);
                 SoundManager.Instance.PlayOneShot("Fireball", 1.0f);
                 var dir = Player.Instance.transform.position - transform.position;
                 var angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;

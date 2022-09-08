@@ -4,12 +4,11 @@ using UnityEngine;
 
 public class Wolf : Enemy
 {
-
     protected override void Awake() 
     {
         base.Awake();
-        Name = "Wolf";
         lifeBack.transform.localPosition = Vector2.up * .8f;
+        DropGoldAmount = 10;
     }
 
     protected override void Start() 
@@ -22,13 +21,13 @@ public class Wolf : Enemy
     {
         while(!IsDead)
         {
-            yield return new WaitForSeconds(3f + Random.value * 5);
+            yield return YieldCache.WaitForSeconds(3f + Random.Range(0, 10) * .5f);
 
             SoundManager.Instance.PlayOneShot("WolfBark_" + Random.Range(1, 2+1), 2.0f);
             SetForce(Player.Instance.transform.position - transform.position, 10f);
             for(var i = 0f; i < 0.5f; i += 0.1f) {
                 ParticleManager.Instance.SpawnParticle(transform.position, ParticleType.Smoke, Color.red, .1f, (int)(10 / 0.1f));
-                yield return new WaitForSeconds(0.1f);
+                yield return YieldCache.WaitForSeconds(0.1f);
             }
             AddForce(Player.Instance.transform.position - transform.position, 6f);
         }
@@ -45,12 +44,12 @@ public class Wolf : Enemy
 
     protected override void AttackSound()
     {
-        SoundManager.Instance.PlayOneShot("WolfBite_" + Random.Range(1, 2+1), 2.0f);
+        SoundManager.Instance.PlayOneShot("WolfBite_" + Random.Range(1, 2+1), 1.0f);
     }
 
     protected override void HitSound()
     {
-        SoundManager.Instance.PlayOneShot("WolfDamaged_" + Random.Range(1, 2+1), 1.5f);
+        SoundManager.Instance.PlayOneShot("WolfDamaged_" + Random.Range(1, 2+1), 1.0f);
     }
 
     protected override void OnEarlyUpdate()

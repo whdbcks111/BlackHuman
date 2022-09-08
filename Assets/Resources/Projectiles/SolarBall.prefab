@@ -125,6 +125,7 @@ MonoBehaviour:
   RotateBackwards: 0
   DestoryInCollision: 0
   DestroyInWall: 1
+  DestroyInBlock: 1
   MoveAxis: {x: 0, y: 0}
 --- !u!1 &8073341302534267268
 GameObject:

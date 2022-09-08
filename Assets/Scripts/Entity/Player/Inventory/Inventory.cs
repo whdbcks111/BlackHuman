@@ -6,11 +6,12 @@ using UnityEngine.UI;
 public class Inventory
 {
 
-    public const byte LineCount = 10;
+    public const byte LineCount = 6;
 
     private byte _selectedSlot;
     public byte SelectedSlot { get { return _selectedSlot; } set { _selectedSlot = (byte)Mathf.Clamp(value, 0, Player.HotbarSize - 1); } }
     private readonly ItemStack[] _contents = new ItemStack[Player.HotbarSize * LineCount];
+    public ItemStack PointerHoldItem = null;
 
     public ItemStack GetItemStack(int slot)
     {
@@ -54,8 +55,9 @@ public class Inventory
         return false;
     }
 
-    public int AddItemStack(ItemStack itemStack, int amount = 1)
+    public int AddItemStack(ItemStack itemStack)
     {
+        int amount = itemStack.Amount;
         var maxAmount = itemStack.ItemType.MaxAmount;
         for (var i = 0; i < _contents.Length; i++)
         {
@@ -63,8 +65,8 @@ public class Inventory
             {
                 if (amount > maxAmount)
                 {
-                    amount -= maxAmount;
                     itemStack.Amount = maxAmount;
+                    amount -= maxAmount;
                     SetItemStack(i, new ItemStack(itemStack));
                 }
                 else
@@ -74,7 +76,7 @@ public class Inventory
                     SetItemStack(i, new ItemStack(itemStack));
                 }
             }
-            else
+            else if(_contents[i].ItemType == itemStack.ItemType)
             {
                 var remainAmount = maxAmount - GetItemAmount(i);
                 if (remainAmount > amount)
@@ -111,6 +113,7 @@ public class Inventory
             itemStack.ItemType.OnUpdate(itemStack);
         }
         var itemInHand = GetItemStack(SelectedSlot);
-        itemInHand?.ItemType?.OnUpdateInHand(itemInHand);
+        if(itemInHand != null && itemInHand.ItemType.OnUpdateInHand != null)
+            itemInHand.ItemType.OnUpdateInHand(itemInHand);
     }
 }

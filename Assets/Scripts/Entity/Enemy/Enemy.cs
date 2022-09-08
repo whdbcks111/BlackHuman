@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 public abstract class Enemy : LivingEntity
 {
-
     private static List<Enemy> _enemies = new();
 
     [SerializeField]
@@ -21,6 +20,9 @@ public abstract class Enemy : LivingEntity
     private float _pathFindTimer = 0f;
     private Stack<Vector3> _paths = new();
     private Vector3 _beforePath;
+
+    [HideInInspector]
+    public int DropGoldAmount = 0; 
     
     public static Enemy SpawnEnemy(string name, Vector2 pos)
     {
@@ -50,6 +52,7 @@ public abstract class Enemy : LivingEntity
     {
         _enemies.Add(this);
         base.Awake();
+
         _beforePos = transform.position;
         lifeBack = Instantiate(Resources.Load<GameObject>("Enemies/EnemyBar"), spriteRenderer.transform);
         lifeBarImg = lifeBack.transform.GetChild(0).GetChild(0).GetComponent<Image>();
@@ -93,7 +96,7 @@ public abstract class Enemy : LivingEntity
         lifeBarImg.fillAmount = Life / Attribute.GetValue(AttributeType.MaxLife);
     }
 
-    protected new void Move()
+    protected override void Move()
     {
         if (axis.magnitude > 0f && (_moveCheckTimer -= Time.deltaTime) < 0f)
         {
@@ -112,6 +115,13 @@ public abstract class Enemy : LivingEntity
     {
         yield return base.KillEffect();
         _enemies.Remove(this);
+        var sqrtValue = (int)(Mathf.Sqrt(DropGoldAmount));
+        while(DropGoldAmount > 0)
+        {
+            var amount = Mathf.Clamp(Random.Range(sqrtValue, (int)(sqrtValue * 1.5)), 1, DropGoldAmount);
+            DropGoldAmount -= amount;
+            Gold.SpawnGold(transform.position, amount);
+        }
         Destroy(gameObject);
     }
 

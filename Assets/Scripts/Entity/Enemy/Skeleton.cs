@@ -4,12 +4,11 @@ using UnityEngine;
 
 public class Skeleton : Enemy
 {
-
     protected override void Awake() 
     {
         base.Awake();
-        Name = "Skeleton";
-        lifeBack.transform.localPosition = Vector2.up * .8f;
+        lifeBack.transform.localPosition = Vector2.up * 1f;
+        DropGoldAmount = 15;
     }
 
     protected override void InitializeDefaults()
@@ -41,16 +40,16 @@ public class Skeleton : Enemy
     {
         while(!IsDead)
         {
-            yield return new WaitForSeconds(1.25f + Random.value * 0.5f);
+            yield return YieldCache.WaitForSeconds(1.25f + Random.Range(0, 10) * 0.05f);
 
             if(IsDead) break;
             SoundManager.Instance.PlayOneShot("BowPull", 1.5f);
-            yield return new WaitForSeconds(1f);
+            yield return YieldCache.WaitForSeconds(1f);
             
             if(IsDead) break;
             for(var i = 0; i < Random.Range(1, 2 + 1); i++) 
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return YieldCache.WaitForSeconds(0.1f);
                 SoundManager.Instance.PlayOneShot("Arrow", 1.0f);
                 var dir = Player.Instance.transform.position - transform.position;
                 var angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;

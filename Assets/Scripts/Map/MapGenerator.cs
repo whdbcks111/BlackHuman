@@ -47,7 +47,18 @@ public class MapGenerator : MonoBehaviour
 
     private void Start() 
     {
-        GenerateRooms(10);
+        GenerateRooms(13);
+    }
+
+    public float GetCompleteLevel()
+    {
+        int complete = 0, max = 0;
+        foreach(var room in _rooms.Values)
+        {
+            if(room.WasOnceClosed && !room.IsClosed) complete++;
+            max++;
+        }
+        return (float)complete / max;
     }
 
     private void Update() {
@@ -118,9 +129,10 @@ public class MapGenerator : MonoBehaviour
 
             foreach(var enemyPos in room.Enemies)
             {
-                Enemy target = enemyPrefabs[Mathf.Clamp(enemyPos.EnemyIdx, 0, enemyPrefabs.Length)]; 
-                Enemy.SpawnEnemy(target, Formation.GetPivotPos(room.BoundStart, room.BoundEnd, 
-                        Vector2Int.FloorToInt(enemyPos.Pos), enemyPos.Pivot));
+                Enemy target = enemyPrefabs[Mathf.Clamp(Random.Range(enemyPos.EnemyIdxMin, enemyPos.EnemyIdxMax + 1), 
+                        0, enemyPrefabs.Length)]; 
+                Enemy.SpawnEnemy(target, Formation.GetPivot(room.BoundStart, room.BoundEnd, enemyPos.Pivot) 
+                        + Vector2Int.FloorToInt(enemyPos.Pos));
             }
         }
         else
@@ -147,7 +159,7 @@ public class MapGenerator : MonoBehaviour
             OpenDoor(endPos);
         }
         for(var y = room.BoundStart.y; y <= room.BoundEnd.y; y++)
-        {    
+        {
             var startPos = new Vector3Int(room.BoundStart.x - 1, y);
             var endPos = new Vector3Int(room.BoundEnd.x + 1, y);
             OpenDoor(startPos);
@@ -156,10 +168,9 @@ public class MapGenerator : MonoBehaviour
         GenerateShadowDefault(_doorTilemap);
         SoundManager.Instance.PlayOneShot("Door", 7f);
 
-        if(Random.value < 10.5f)
+        if(room.Type == RoomType.Monster && Random.value < 0.3f)
         {
-            var center = (room.BoundStart + room.BoundEnd) / 2;
-            var treasureBox = Block.SetBlock(center, "TreasureBox");
+            var treasureBox = Block.SetBlock(room.Pos, "TreasureBox");
             ParticleManager.Instance.SpawnParticle(treasureBox.gameObject.transform.position, ParticleType.HorizontalExplode, 1f, 0, 10);
         }
     }
@@ -216,7 +227,7 @@ public class MapGenerator : MonoBehaviour
 
             var pos = room.Pos + dir * _bossRoomSize;
             if (_rooms.ContainsKey(pos)) continue;
-            var newRoom = new Room(room.TotalLength + 1, pos, room, RoomType.Monster); // (RoomType)Random.Range(0, (int)RoomType.Boss)
+            var newRoom = new Room(room.TotalLength + 1, pos, room, RoomType.Monster);
             _rooms.Add(pos, newRoom);
             room.Children.Add(newRoom);
             TryCreateTransition(newRoom, roomCnt);
@@ -238,15 +249,36 @@ public class MapGenerator : MonoBehaviour
         }
         farthestRoom.Type = RoomType.Boss;
 
+        List<Room> monsterRooms = new();
+        foreach (var room in _rooms.Values) 
+        {
+            if(room.Type == RoomType.Monster) monsterRooms.Add(room);
+        } 
+
+        for (var i = 0; i < (int)(_rooms.Count * 0.1f + 1) && monsterRooms.Count > 0; i++)
+        {
+            var room = monsterRooms[Random.Range(0, monsterRooms.Count)];
+            room.Type = RoomType.Shop;
+            monsterRooms.Remove(room);
+        }
+
+        if(Random.value < 0.4)
+            for (var i = 0; i < (int)(_rooms.Count * 0.05f + 1) && monsterRooms.Count > 0; i++)
+            {
+                var room = monsterRooms[Random.Range(0, monsterRooms.Count)];
+                room.Type = RoomType.Treasure;
+                monsterRooms.Remove(room);
+            }
+
         GenerateTiles();
     }
     private void GenerateTiles() {
         var cellPos = (Vector2Int)_floorTilemap.WorldToCell(Vector3.zero);
         foreach (var room in _rooms.Values)
         {
-            var size = room.Type == RoomType.Boss ? _bossRoomSize : _generalRoomSize - Random.Range(-2, 3);
+            var size = room.Type == RoomType.Boss ? _bossRoomSize : _generalRoomSize - Random.Range(-1, 2) * 2;
             var start = -size / 2;
-            var end = size / 2 - 1;
+            var end = size / 2;
             room.BoundStart = room.Pos + new Vector2Int(start, start);
             room.BoundEnd = room.Pos + new Vector2Int(end, end);
             for(var x = start; x <= end; x++) {
@@ -263,6 +295,27 @@ public class MapGenerator : MonoBehaviour
             _wallTilemap.SetTile((Vector3Int)(cellPos + room.Pos + new Vector2Int(end + 1, end + 1)), _wallRuleTile);
             _wallTilemap.SetTile((Vector3Int)(cellPos + room.Pos + new Vector2Int(start - 1, start - 1)), _wallRuleTile);
             _wallTilemap.SetTile((Vector3Int)(cellPos + room.Pos + new Vector2Int(end + 1, start - 1)), _wallRuleTile);
+        }
+
+        foreach(var room in _rooms.Values)
+        {
+            switch(room.Type)
+            {
+                case RoomType.Treasure:
+                    Block.SetBlock(room.Pos, "TreasureBox");
+                    break;
+                case RoomType.Shop:
+                    var center = _floorTilemap.CellToWorld((Vector3Int)room.Pos);
+                    for(var j = -1; j <= 1; j++)
+                    {
+                        List<ItemType> types = ItemType.GetAll<ItemType>();
+                        var itemType = types[Random.Range(0, types.Count)];
+                        ShopItem.PlaceItem(new(itemType), Random.Range(50, 300), 
+                                center + Vector3.right * j * 2.5f + Vector3.down);
+                    }
+                    Npc.SpawnNpc("Shopper", center + Vector3.up * 0.5f);
+                    break;
+            }
         }
 
         foreach (var room in _rooms.Values)
@@ -302,11 +355,11 @@ public class MapGenerator : MonoBehaviour
             {
                 var formations = _curTheme.Formations;
                 var formation = _formationMap[formations[Random.Range(0, formations.Length)]];
-                room.Enemies = formation.Enemies;
+                room.Enemies = formation.Enemies.ToArray();
 
                 foreach(var blockPos in formation.Blocks)
                 {
-                    Block.SetBlock(Formation.GetPivotPos(room.BoundStart, room.BoundEnd, blockPos.Pos, blockPos.Pivot), blockPos.Block);
+                    Block.SetBlock(Formation.GetPivot(room.BoundStart, room.BoundEnd, blockPos.Pivot) + blockPos.Pos, blockPos.Block);
                 }
             }
         }

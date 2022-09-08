@@ -8,8 +8,8 @@ public class ClayGolem : Enemy
     protected override void Awake() 
     {
         base.Awake();
-        Name = "ClayGolem";
-        lifeBack.transform.localPosition = Vector2.up * .8f;
+        lifeBack.transform.localPosition = Vector2.up * 1.4f;
+        DropGoldAmount = 35;
     }
 
     protected override void InitializeDefaults()
@@ -41,7 +41,7 @@ public class ClayGolem : Enemy
     {
         while(!IsDead)
         {
-            yield return new WaitForSeconds(3.25f + Random.value * 2.5f);
+            yield return YieldCache.WaitForSeconds(3.25f + Random.value * 2.5f);
             
             if(IsDead) break;
             for(var i = 0; i < 340; i += Random.Range(25, 40)) 
@@ -57,7 +57,7 @@ public class ClayGolem : Enemy
                 var p = Projectile.SpawnProjectile(spawnPos, "ClayBall", this, new[]{ "Player" });
                 ParticleManager.Instance.SpawnParticle(spawnPos, ParticleType.HorizontalExplode, new Color(.6f, .3f, 0), 0.1f, 0, 4);
                 p.MoveAxis = dir;
-                p.Attribute.SetDefaultValue(AttributeType.AttackDamage, 20);
+                p.Attribute.SetDefaultValue(AttributeType.AttackDamage, 10);
             }
         }
     }

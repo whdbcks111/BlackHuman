@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1778091155436198839}
   - component: {fileID: 1778091155436198837}
-  - component: {fileID: 1778091155436198838}
   - component: {fileID: 1778091155436198836}
+  - component: {fileID: 4539905220418163997}
   m_Layer: 12
   m_Name: KingSlime
   m_TagString: Untagged
@@ -48,28 +48,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef2050bb95acb5c44aa65e59ce55bb6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spriteRenderer: {fileID: 1778091155687647603}
   animator: {fileID: 1778091155687647602}
   rigid: {fileID: 1778091155436198836}
-  spriteRenderer: {fileID: 1778091155687647603}
   Size: {x: 4, y: 4}
   FollowDistance: 40
-  _sprite: {fileID: 1778091155687647605}
---- !u!58 &1778091155436198838
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1778091155436198842}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.119880915}
-  serializedVersion: 2
-  m_Radius: 1.7542403
+  DropGoldAmount: 0
 --- !u!50 &1778091155436198836
 Rigidbody2D:
   serializedVersion: 4
@@ -91,6 +75,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!70 &4539905220418163997
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778091155436198842}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: -0.06766946, y: -0.473666}
+  m_Size: {x: 3.4113894, y: 2.9807992}
+  m_Direction: 1
 --- !u!1 &1778091155687647605
 GameObject:
   m_ObjectHideFlags: 0
@@ -162,8 +162,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 209639899
+  m_SortingLayer: 1
   m_SortingOrder: 5
   m_Sprite: {fileID: 188117400, guid: e0fad5a74ade0f94eab0296d589b397b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -221,8 +221,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1778091156629141719}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.06, y: -1.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -0.06, y: -1.26, z: 0}
+  m_LocalScale: {x: 1.36, y: 1.43, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1778091155436198839}
@@ -268,7 +268,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 4
+  m_SortingOrder: 3
   m_Sprite: {fileID: 21300000, guid: f724ec15068a8eb4da9defc57655d40a, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0.68235296}
   m_FlipX: 0
