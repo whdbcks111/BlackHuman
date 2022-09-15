@@ -7,6 +7,14 @@ public abstract class Npc : LivingEntity
     private static List<Npc> _npcs = new();
 
     private GameObject _icon;
+
+    public static void ClearAllNpcs()
+    {
+        Queue<GameObject> destroyTargets = new();
+        foreach(var e in _npcs) destroyTargets.Enqueue(e.gameObject);
+        _npcs.Clear();
+        foreach(var e in destroyTargets) DestroyImmediate(e.gameObject);
+    }
     
     public static Npc SpawnNpc(string name, Vector2 pos)
     {

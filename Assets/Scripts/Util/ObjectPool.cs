@@ -29,13 +29,31 @@ public class ObjectPool : MonoBehaviour {
     private void Start() {
         _worldCanvas = Storage.Get("WorldCanvas").transform;
         _goldContainer = Storage.Get("GoldContainer").transform;
+        _projectileContainer = Storage.Get("ProjectileContainer").transform;
+    }
+
+    public void ClearAll()
+    {
+        StopAllCoroutines();
+        _disabledDamageTexts.Clear();
+        _disabledGolds.Clear();
+        _disabledProjectiles.Clear();
+        foreach(Transform child in _projectileContainer) Destroy(child.gameObject);
+        foreach(Transform child in _worldCanvas) Destroy(child.gameObject);
+        foreach(Transform child in _goldContainer) Destroy(child.gameObject);
+
+        print(_disabledProjectiles.Count);
     }
 
     public Projectile GetProjectile(string name, Vector3 pos)
     {
-        if(!_projectilePrefabs.ContainsKey(name)) _projectilePrefabs[name] = Resources.Load<Projectile>("Projectiles/" + name);
+        if(!_projectilePrefabs.ContainsKey(name)) 
+            _projectilePrefabs[name] = Resources.Load<Projectile>("Projectiles/" + name);
         var prefab = _projectilePrefabs[name];
-        if(!_disabledProjectiles.ContainsKey(name)) _disabledProjectiles[name] = new();
+        
+        if(!_disabledProjectiles.ContainsKey(name)) 
+            _disabledProjectiles[name] = new();
+        
         if(_disabledProjectiles[name].Count > 0)
         {
             var p = _disabledProjectiles[name].Dequeue();
@@ -49,7 +67,8 @@ public class ObjectPool : MonoBehaviour {
         }
         else 
         {
-            var p = Instantiate(_projectilePrefabs[name], pos, Quaternion.identity);
+            var p = Instantiate(_projectilePrefabs[name], _projectileContainer);
+            p.transform.position = pos;
             p.Init();
             return p;
         }
@@ -57,6 +76,7 @@ public class ObjectPool : MonoBehaviour {
 
     public void DestroyProjectile(Projectile p)
     {
+        if(!p.gameObject.activeSelf) return;
         p.gameObject.SetActive(false);
         p.StopAllCoroutines();
         _disabledProjectiles[p.Name].Enqueue(p);
@@ -75,6 +95,7 @@ public class ObjectPool : MonoBehaviour {
 
     public void DestroyDamageText(TextMeshProUGUI text)
     {
+        if(!text.gameObject.activeSelf) return;
         text.gameObject.SetActive(false);
         _disabledDamageTexts.Enqueue(text);
     }
@@ -92,6 +113,7 @@ public class ObjectPool : MonoBehaviour {
 
     public void DestroyGold(Gold gold)
     {
+        if(!gold.gameObject.activeSelf) return;
         gold.gameObject.SetActive(false);
         _disabledGolds.Enqueue(gold);
     }

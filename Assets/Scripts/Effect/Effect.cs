@@ -12,7 +12,7 @@ public class Effect
     public int Level;
     public LivingEntity Target, Caster;
     public Dictionary<string, object> Extras = new();
-    public Image EffectIcon = null;
+    public Image CooldownPanel = null;
 
     public Effect(EffectType type, int level, float duration, LivingEntity target, LivingEntity caster = null)
     {

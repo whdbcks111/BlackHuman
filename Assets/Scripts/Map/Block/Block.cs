@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class Block : Damageable
 {
 
-    public static Dictionary<Vector2Int, Block> Blocks = new();
+    public static Dictionary<Vector2Int, Block> Blocks { get { return GameManager.Instance.Blocks; } }
     
     [SerializeField]
     private float _defaultLife = 200f;
@@ -29,6 +29,11 @@ public class Block : Damageable
     protected GameObject lifeBack;
     protected Image lifeBarImg;
     private GameObject _icon;
+
+    public static void ClearAllBlocks()
+    {
+        foreach(var b in Blocks.Values) Destroy(b.gameObject);
+    }
 
     protected override void Awake() {
         base.Awake();

@@ -43,6 +43,14 @@ public abstract class Enemy : LivingEntity
         return e;
     }
 
+    public static void ClearAllEnemies()
+    {
+        Queue<GameObject> destroyTargets = new();
+        foreach(var e in _enemies) destroyTargets.Enqueue(e.gameObject);
+        _enemies.Clear();
+        foreach(var e in destroyTargets) DestroyImmediate(e.gameObject);
+    }
+
     public static IEnumerable<Enemy> GetEnemies()
     {
         foreach(var e in _enemies) yield return e;
@@ -140,7 +148,7 @@ public abstract class Enemy : LivingEntity
         }
 
         // 플레이어가 탐지 반경 내에 있다면 일정 시간마다 a* 알고리즘으로 길찾기
-        if (Vector2.Distance(transform.position, Player.Instance.transform.position) < FollowDistance
+        if ((transform.position - Player.Instance.transform.position).sqrMagnitude < FollowDistance * FollowDistance
                 && (_pathFindTimer -= Time.deltaTime) < 0f)
         {
             _pathFindTimer += .3f;
@@ -162,7 +170,7 @@ public abstract class Enemy : LivingEntity
         // 경로가 있다면, 따라가고, 없다면 플레이어 방향으로 이동
         if (_paths.Count > 0)
         {
-            if (Vector2.Distance(_beforePath, _paths.Peek()) > Vector2.Distance(transform.position, _beforePath))
+            if ((_beforePath - _paths.Peek()).sqrMagnitude > (transform.position - _beforePath).sqrMagnitude)
             {
                 axis = (_paths.Peek() - transform.position).normalized;
                 if (axis.magnitude == 0)
@@ -173,7 +181,7 @@ public abstract class Enemy : LivingEntity
             }
             else NextPath();
         }
-        else if(Vector2.Distance(transform.position, Player.Instance.transform.position) < FollowDistance)
+        else if((transform.position - Player.Instance.transform.position).sqrMagnitude < FollowDistance * FollowDistance)
         {
             axis = (Player.Instance.transform.position - transform.position).normalized;
         }

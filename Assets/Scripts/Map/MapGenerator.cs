@@ -171,7 +171,14 @@ public class MapGenerator : MonoBehaviour
         if(room.Type == RoomType.Monster && Random.value < 0.3f)
         {
             var treasureBox = Block.SetBlock(room.Pos, "TreasureBox");
-            ParticleManager.Instance.SpawnParticle(treasureBox.gameObject.transform.position, ParticleType.HorizontalExplode, 1f, 0, 10);
+            ParticleManager.Instance.SpawnParticle(treasureBox.gameObject.transform.position, 
+                    ParticleType.HorizontalExplode, 1f, 0, 10);
+        }
+        else if(room.Type == RoomType.Boss)
+        {
+            var portal = NextStagePortal.PlacePortal(_floorTilemap.CellToWorld((Vector3Int)room.Pos));
+            ParticleManager.Instance.SpawnParticle(portal.gameObject.transform.position, 
+                    ParticleType.HorizontalExplode, Color.magenta, 1f, 0, 10);
         }
     }
 
@@ -200,6 +207,8 @@ public class MapGenerator : MonoBehaviour
         _rooms.Clear();
         _wallTilemap.ClearAllTiles();
         _floorTilemap.ClearAllTiles();
+        _doorTilemap.ClearAllTiles();
+        _minimapTilemap.ClearAllTiles();
         var newRoom = new Room(0, Vector2Int.zero, null);
         _rooms.Add(Vector2Int.zero, newRoom);
         TryCreateTransition(newRoom, roomCnt);

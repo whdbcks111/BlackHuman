@@ -6,7 +6,6 @@ using TMPro;
 public class ShopItem : DroppedItem
 {
     private static ShopItem s_prefab = null;
-    private static Transform s_container = null;
 
     [SerializeField]
     private TextMeshProUGUI _costText;
@@ -30,9 +29,9 @@ public class ShopItem : DroppedItem
     public static ShopItem PlaceItem(ItemStack itemStack, int cost, Vector3 pos)
     {
         if(s_prefab == null) s_prefab = Resources.Load<ShopItem>("Interactable/ShopItem");
-        if(s_container == null) s_container = Storage.Get("ShopContainer").transform;
 
-        var shopItem = Instantiate(s_prefab, s_container);
+        var shopItem = Instantiate(s_prefab);
+        GameManager.Instance.AddInteractable(shopItem);
         shopItem.transform.position = pos;
         shopItem.droppedItemStack = new(itemStack);
         shopItem._cost = cost;

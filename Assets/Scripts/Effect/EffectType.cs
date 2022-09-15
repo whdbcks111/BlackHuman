@@ -44,26 +44,25 @@ public class EffectType : Enumeration
     public static readonly EffectType Blindness = new(nameof(Blindness), 
     effect => 
     {
-        Debug.Log("BlindS");
+        var mask = Storage.Get("BlindMask");
+        effect.Extras["Blind"] = mask;
         if(!(effect.Target is Player)) 
         {
             effect.Duration = 0f;
             return;
         }
         var latest = (float)effect.Target.Extras.GetValueOrDefault("latestBlind", -1f);
-        var mask = Storage.Get<SpriteMask>("BlindMask");
-        effect.Extras["Blind"] = mask;
         mask.gameObject.SetActive(true);
-        if(Time.time - latest > 0.1f) mask.transform.localScale = Vector2.one * 15;
+        if(Time.time - latest > 0.1f) mask.transform.localScale = Vector2.one * 20;
     }, 
     effect => 
     {
-        var mask = (SpriteMask) effect.Extras["Blind"];
-        var size = Mathf.Clamp(4.5f - effect.Level * 0.5f, 0f, 4f);
+        var mask = (GameObject) effect.Extras["Blind"];
+        var size = Mathf.Clamp(4.0f - effect.Level * 0.3f, 1f, 4f);
 
         mask.transform.localScale = Vector2.one * ExtraMath.AddTowards(
                 mask.transform.localScale.x, 
-                effect.Duration < .5f ? 15f : size, 
+                effect.Duration < .5f ? 20f : size, 
                 Time.deltaTime * (effect.Duration < .5f ? 30f : 10f)
         );
 
@@ -71,8 +70,7 @@ public class EffectType : Enumeration
     }, 
     effect => 
     {
-        Debug.Log("BlindF");
-        var mask = (SpriteMask) effect.Extras["Blind"];
+        var mask = (GameObject) effect.Extras["Blind"];
         mask.gameObject.SetActive(false);
     });
     public static readonly EffectType Regeneration = new(nameof(Regeneration), 

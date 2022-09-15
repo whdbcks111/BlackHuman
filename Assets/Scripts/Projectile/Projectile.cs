@@ -15,17 +15,16 @@ public class Projectile : MonoBehaviour
     public bool RotateBackwards, DestoryInCollision, DestroyInWall, DestroyInBlock, DamageOnce;
     public Vector2 MoveAxis;
 
-    protected string[] targetTags;
-    protected LivingEntity self;
+    public string[] TargetTags;
+    public LivingEntity Self;
 
     private HashSet<Damageable> _damaged = new();
 
     public static Projectile SpawnProjectile(Vector3 pos, string name, LivingEntity self, string[] targetTags = null)
     {
         var p = ObjectPool.Instance.GetProjectile(name, pos);
-        p.transform.SetParent(Storage.Get("ProjectileContainer").transform);
-        p.self = self;
-        p.targetTags = targetTags;
+        p.Self = self;
+        p.TargetTags = targetTags;
         p.Name = name;
         return p;
     }
@@ -64,11 +63,11 @@ public class Projectile : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         var damageable = other.gameObject.GetComponent<Damageable>();
-        if (damageable != null && damageable != self)
+        if (damageable != null && damageable != Self)
         {
-            if (damageable is LivingEntity && targetTags != null && !targetTags.Contains(other.gameObject.tag)) return;
+            if (damageable is LivingEntity && TargetTags != null && !TargetTags.Contains(other.gameObject.tag)) return;
             if (DestoryInCollision) ObjectPool.Instance.DestroyProjectile(this);
-            if (DestroyInBlock && damageable is Block) Destroy(gameObject);
+            else if (DestroyInBlock && damageable is Block) ObjectPool.Instance.DestroyProjectile(this);
             if (DamageOnce && _damaged.Contains(damageable)) return;
             if (!damageable.Invulerable) OnCollision(damageable);
             _damaged.Add(damageable);
@@ -76,8 +75,7 @@ public class Projectile : MonoBehaviour
         else if (other.gameObject.layer == s_wallLayer)
         {
             OnCollisionInWall();
-            if (DestoryInCollision) ObjectPool.Instance.DestroyProjectile(this);
-            else if (DestroyInWall) ObjectPool.Instance.DestroyProjectile(this);
+            if (DestoryInCollision || DestroyInWall) ObjectPool.Instance.DestroyProjectile(this);
         }
     }
 

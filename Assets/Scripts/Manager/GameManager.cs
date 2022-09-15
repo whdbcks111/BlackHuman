@@ -7,13 +7,31 @@ using TMPro;
 using System;
 using System.Linq;
 
+// Project Settings에서 GameManager의 실행 순서를 -1로 설정함
 public class GameManager : MonoBehaviour
 {
-    private static GameObject s_keyChangeBoxPrefab;
-    private static GameObject s_keyButtonPrefab;
+    private GameObject _keyChangeBoxPrefab;
+    private GameObject _keyButtonPrefab;
+    private Transform _interactableContainer;
 
     public static GameManager Instance { get; private set; }
 
+    [SerializeField]
+    public Image StageClearPanel;
+    [SerializeField]
+    public RectTransform PointerHoldItem;
+    [SerializeField]
+    public Image PointerHoldItemImage;
+    [SerializeField]
+    public TextMeshProUGUI PointerHoldItemCount;
+    [SerializeField]
+    public GameObject ItemInfo, InvContents;
+    [SerializeField]
+    private GameObject _gotoTitleBtn, _resetBtn;
+    [SerializeField]
+    public TextMeshProUGUI ItemInfoName, ItemInfoDescription;
+    [SerializeField]
+    public Image ItemInfoImage;
     [SerializeField]
     private GameObject _optionPanel, _gameOverPanel, _inventoryView;
     [SerializeField]
@@ -25,7 +43,7 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Transform _keyBoxesContainer;
     [SerializeField]
-    private TextMeshProUGUI _keyInputAlert;
+    private TextMeshProUGUI _keyInputAlert, _stageInfo;
     [SerializeField]
     private Toggle _displayDamageToggle;
     [SerializeField]
@@ -44,6 +62,12 @@ public class GameManager : MonoBehaviour
 
     private Button _defaultOptionCategory;
     private IEnumerator _editKeyCoroutine = null;
+    private float _bgmVolMultiplier = 1f;
+
+    [HideInInspector]
+    public Dictionary<Vector2Int, Block> Blocks = new();
+    [HideInInspector]
+    public List<IInteractable> Interactables = new();
 
     private void Awake()
     {
@@ -55,8 +79,8 @@ public class GameManager : MonoBehaviour
         Instance = this;
 
         Stage = 1;
-        s_keyChangeBoxPrefab = Resources.Load<GameObject>("UI/KeyChangeBox");
-        s_keyButtonPrefab = Resources.Load<GameObject>("UI/Key");
+        _keyChangeBoxPrefab = Resources.Load<GameObject>("UI/KeyChangeBox");
+        _keyButtonPrefab = Resources.Load<GameObject>("UI/Key");
 
         foreach (var btn in _optionCategories.Keys)
         {
@@ -119,7 +143,7 @@ public class GameManager : MonoBehaviour
         foreach (var _bind in DefaultKeyBinds)
         {
             var bind = _keyBinds[_bind.Name];
-            var keyChangeBox = Instantiate(s_keyChangeBoxPrefab, _keyBoxesContainer);
+            var keyChangeBox = Instantiate(_keyChangeBoxPrefab, _keyBoxesContainer);
             var buttonNameText = keyChangeBox.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
             var keyAddBtn = keyChangeBox.transform.GetChild(2).GetComponent<Button>();
             buttonNameText.SetText(bind.DisplayName);
@@ -157,9 +181,94 @@ public class GameManager : MonoBehaviour
 
     }
 
+    public void GotoTitle()
+    {
+        SceneManager.LoadScene("TitleScene");
+        _optionPanel.SetActive(false);
+    }
+
+    public void AddInteractable(IInteractable interactable)
+    {
+        Interactables.Add(interactable);
+        if(interactable is MonoBehaviour script)
+        {
+            script.transform.SetParent(Storage.Get("InteractableContainer").transform);
+        }
+    }
+
+    public void RemoveInteractable(IInteractable interactable)
+    {
+        Interactables.Remove(interactable);
+    }
+
+    public void ClearAllInteractables()
+    {
+        Queue<GameObject> destroyTargets = new();
+        foreach(var e in Interactables) 
+            if(e is MonoBehaviour script) destroyTargets.Enqueue(script.gameObject);
+        Interactables.Clear();
+        foreach(var e in destroyTargets) DestroyImmediate(e.gameObject);
+    }
+
+    public void NextStage()
+    {
+        StartCoroutine(NextStageCoroutine());
+        Stage++;
+    }
+
+    public void ResetStage()
+    {
+        SoundManager.Instance.ResetMusic();
+        Player.Instance.SetForce(Vector2.zero, 0);
+        Player.Instance.transform.position = Vector3.zero;
+        Camera.main.transform.position = Vector3.back * 10;
+        Block.ClearAllBlocks();
+        ClearAllInteractables();
+        ObjectPool.Instance.ClearAll();
+        Npc.ClearAllNpcs();
+        Enemy.ClearAllEnemies();
+        MapGenerator.Instance.GenerateRooms((Stage - 1) * 5 + 9);
+        _optionPanel.SetActive(false);
+        _gameOverPanel.SetActive(false);
+    }
+
+    public void ResetGame()
+    {
+        Stage = 1;
+        Player.Instance.Revive();
+        ResetStage();
+    }
+
+    private IEnumerator NextStageCoroutine()
+    {
+        var panel = StageClearPanel;
+        var col = panel.color;
+        for(var i = 0f; i < 1f; i += Time.deltaTime / 0.5f) 
+        {
+            yield return null;
+            col.a = i;
+            panel.color = col;
+            _bgmVolMultiplier = 1f - i;
+        }
+        _bgmVolMultiplier = 0f;
+        col.a = 1;
+        panel.color = col;
+        yield return YieldCache.WaitForSecondsRealtime(0.5f);
+        ResetStage();
+        _bgmVolMultiplier = 1f;
+        for(var i = 1f; i >= 0f; i -= Time.deltaTime / 0.5f) 
+        {
+            yield return null;
+            col.a = i;
+            panel.color = col;
+        }
+        col.a = 0;
+        panel.color = col;
+    }
+
     private GameObject CreateNewKeyButton(Transform keysContainer, BindKeyInfo info, KeyBind bind)
     {
-        var keyBtn = Instantiate(s_keyButtonPrefab, keysContainer);
+        var keyBtn = Instantiate(_keyButtonPrefab, keysContainer);
         var keyNameText = keyBtn.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
 
         keyNameText.SetText(info.Code == KeyCode.None ? "..." : info.Code.ToString());
@@ -263,12 +372,6 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("Options.DisplayDamage", _displayDamageToggle.isOn ? 1 : 0);
     }
 
-    public void ResetGame()
-    {
-        SaveOptions();
-        SceneManager.LoadSceneAsync(0);
-    }
-
     private void Update()
     {
         for(var i = 0; i < _keyBoxesContainer.childCount; i++)
@@ -314,7 +417,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if (KeyInput.GetButtonDown("Inventory", true) && !_isKeyInputting)
+        if (SceneManager.GetActiveScene().name == "GameScene" && KeyInput.GetButtonDown("Inventory", true) && !_isKeyInputting)
         {
             if (_optionPanel.activeSelf) _optionPanel.SetActive(false);
             else _inventoryView.SetActive(!_inventoryView.activeSelf);
@@ -323,20 +426,25 @@ public class GameManager : MonoBehaviour
         if (IsPaused()) Time.timeScale = 0f;
         else Time.timeScale = 1f;
 
-        _uptimeText.SetText(string.Format("{0:D2}:{1:D2}", (int)Time.time / 60, (int)Time.time % 60));
+        _uptimeText.SetText(string.Format("{0:D2}:{1:D2}", (int)RealTime.time / 60, (int)RealTime.time % 60));
 
-        if (Player.Instance.IsDead && !_gameOverPanel.activeSelf)
+        if (Player.Instance != null && Player.Instance.IsDead && !_gameOverPanel.activeSelf)
         {
             GameOver();
         }
 
-        SoundManager.Instance.BgmAudioSource.volume = _bgmVolume.value;
+        SoundManager.Instance.BgmAudioSource.volume = _bgmVolume.value * _bgmVolMultiplier;
         SoundManager.Instance.SeAudioSource.volume = _seVolume.value;
 
         foreach (var btn in _optionCategories.Keys)
         {
             _buttonTextMap[btn].color = _optionCategories[btn].activeSelf ? Color.white : Color.gray;
         }
+
+        _stageInfo.gameObject.SetActive(SceneManager.GetActiveScene().name == "GameScene");
+        _resetBtn.gameObject.SetActive(SceneManager.GetActiveScene().name == "GameScene");
+        _gotoTitleBtn.gameObject.SetActive(SceneManager.GetActiveScene().name == "GameScene");
+        _stageInfo.SetText("스테이지 " + Stage);
     }
 
     public void GameOver()

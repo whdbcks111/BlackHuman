@@ -104,9 +104,12 @@ public class AutoShadowClosedTilemap : MonoBehaviour
 
         _shapePathField.SetValue(shadowCasterComponent, testPath);
         _meshField.SetValue(shadowCasterComponent, new Mesh());
-        _generateShadowMeshMethod.Invoke(shadowCasterComponent, new object[] { _meshField.GetValue(shadowCasterComponent), _shapePathField.GetValue(shadowCasterComponent) });
-
-        Debug.Log("Shadow Generated");
+        _generateShadowMeshMethod.Invoke(shadowCasterComponent, 
+                new object[] { 
+                    _meshField.GetValue(shadowCasterComponent), 
+                    _shapePathField.GetValue(shadowCasterComponent) 
+                }
+        );
 
     }
     public void DestroyAllChildren()

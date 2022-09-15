@@ -7,6 +7,6 @@ public class BongBongBeam : Projectile
     protected override void OnCollision(Damageable entity)
     {
         base.OnCollision(entity);
-        if(entity is LivingEntity) self.Life += 1.5f; 
+        if(entity is LivingEntity) Self.Life += 1.5f; 
     }
 }

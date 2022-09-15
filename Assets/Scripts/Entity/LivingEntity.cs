@@ -13,7 +13,8 @@ public abstract class LivingEntity : Damageable
     protected Rigidbody2D rigid;
 
 
-    public static int PassingLayer = -1, OriginalLayer = -1;
+    public static int PassingLayer = -1;
+    public int OriginalLayer;
 
     private string _name;
     public bool IsDead { get; private set; }
@@ -49,7 +50,7 @@ public abstract class LivingEntity : Damageable
         Name = GetType().ToString();
         InitializeDefaults();
 
-        if(OriginalLayer == -1) OriginalLayer = gameObject.layer;
+        OriginalLayer = gameObject.layer;
         if(PassingLayer == -1) PassingLayer = LayerMask.NameToLayer("Passing");
     }
 
@@ -114,7 +115,7 @@ public abstract class LivingEntity : Damageable
 
     public virtual void Attack(Damageable damageable, Attribute attribute, DamageType type = DamageType.Normal, bool knockback = true)
     {
-        if(gameObject.layer == PassingLayer) return;
+        if(spriteRenderer.transform.localPosition.y > 1) return; 
         latestAttack = Time.time;
         AttackSound();
         if(damageable is LivingEntity ent && ent.IsDead) return;
@@ -188,6 +189,17 @@ public abstract class LivingEntity : Damageable
         StartCoroutine(nameof(KillEffect));
     }
 
+    public virtual void Revive()
+    {
+        foreach(var eff in effects) eff.Duration = 0f;
+        _force = Vector2.zero;
+        Life = Attribute.GetValue(AttributeType.MaxLife);
+        Mana = Attribute.GetValue(AttributeType.MaxMana);
+        Stamina = Attribute.GetValue(AttributeType.MaxStamina);
+        IsDead = false;
+        originalColor = Color.white;
+    }
+
     protected virtual IEnumerator KillEffect()
     {
         Color c = spriteRenderer.color;
@@ -216,6 +228,7 @@ public abstract class LivingEntity : Damageable
 
         Attribute.OnLateUpdate();
         ColorUpdate();
+        LayerUpdate();
     }
 
     private void JumpUpdate()
@@ -225,9 +238,13 @@ public abstract class LivingEntity : Damageable
         if(pos.y > 0f) JumpVelocity -= 14 * Time.deltaTime;
         else JumpVelocity = 0f;
         spriteRenderer.transform.localPosition = pos;
-
-        gameObject.layer = pos.y > 0.3f ? PassingLayer : OriginalLayer;
         animator.speed = IsJumping ? 0f : 1f;
+    }
+
+    protected virtual void LayerUpdate()
+    {
+        var pos = spriteRenderer.transform.localPosition;
+        gameObject.layer = pos.y > 0.5f ? PassingLayer : OriginalLayer;
     }
 
     public void Jump(float vel)

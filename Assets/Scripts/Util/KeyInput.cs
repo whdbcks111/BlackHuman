@@ -89,17 +89,23 @@ public static class KeyInput
 
     public static bool GetMouseButtonDown(int btn)
     {
-        return GameManager.Instance.CanUseKeyInput() && Input.GetMouseButtonDown(btn) && !EventSystem.current.IsPointerOverGameObject();
+        return GameManager.Instance.CanUseKeyInput() 
+                && Input.GetMouseButtonDown(btn) 
+                && !EventSystem.current.IsPointerOverGameObject();
     }
 
     public static bool GetMouseButton(int btn)
     {
-        return GameManager.Instance.CanUseKeyInput() && Input.GetMouseButton(btn) && !EventSystem.current.IsPointerOverGameObject();
+        return GameManager.Instance.CanUseKeyInput() 
+                && Input.GetMouseButton(btn) 
+                && !EventSystem.current.IsPointerOverGameObject();
     }
 
     public static bool GetMouseButtonUp(int btn)
     {
-        return GameManager.Instance.CanUseKeyInput() && Input.GetMouseButtonUp(btn) && !EventSystem.current.IsPointerOverGameObject();
+        return GameManager.Instance.CanUseKeyInput() 
+                && Input.GetMouseButtonUp(btn) 
+                && !EventSystem.current.IsPointerOverGameObject();
     }
 
     public static Vector2 MouseScrollDelta

@@ -18,6 +18,23 @@ public class Inventory
         return _contents[slot];
     }
 
+    public void DamageItem(int slot, float amount)
+    {
+        var itemStack = GetItemStack(slot);
+        // 원래부터 내구도가 음수 or 최대 개수가 1개 초과 -> 파괴 불가 아이템
+        if(itemStack == null || itemStack.ItemData.Durability < 0 || itemStack.ItemType.MaxAmount > 1) return;
+        
+        if((itemStack.ItemData.Durability -= amount) < 0f)
+        {
+            SetItemStack(slot, null);
+        }
+    }
+
+    public void DamageItem(ItemStack item, float amount)
+    {
+        DamageItem(GetSlotId(item), amount);
+    }
+
     public void SetItemStack(int slot, ItemStack itemStack)
     {
         _contents[slot] = itemStack;
@@ -55,9 +72,33 @@ public class Inventory
         return false;
     }
 
-    public int AddItemStack(ItemStack itemStack)
+    public void GiveDefaultItem()
     {
-        int amount = itemStack.Amount;
+        PointerHoldItem = null;
+        for(var i = 0; i < _contents.Length; i++) _contents[i] = null;
+        AddItemStack(new(ItemType.Replin), 1);
+        AddItemStack(new(ItemType.Sword), 1);
+        AddItemStack(new(ItemType.Shield), 1);
+        AddItemStack(new(ItemType.HealingPotion), 3);
+        AddItemStack(new(ItemType.ManaPotion), 2);
+    }
+
+    public int GetSlotId(ItemStack item)
+    {
+        var slot = -1;
+        for(var i = 0; i < _contents.Length; i++) 
+        {
+            if(_contents[i] == item)
+            {
+                slot = i;
+                break;
+            }
+        }
+        return slot;
+    }
+
+    public int AddItemStack(ItemStack itemStack, int amount=1)
+    {
         var maxAmount = itemStack.ItemType.MaxAmount;
         for (var i = 0; i < _contents.Length; i++)
         {
@@ -103,14 +144,18 @@ public class Inventory
             if(mouseBtn == 0) Player.Instance.AttackNearby(1.5f, 1);
             return;
         }
+        if(itemStack.Cooldown > 0f) return;
         var result = itemStack.ItemType.OnUse(mouseBtn, itemStack);
         if(result) SetItemAmount(slot, GetItemAmount(slot) - 1);
     }
 
     public void Update() {
         foreach(var itemStack in _contents) {
-            if(itemStack == null || itemStack.ItemType.OnUpdate == null) continue;
-            itemStack.ItemType.OnUpdate(itemStack);
+            if(itemStack != null)
+            {
+                if(itemStack.Cooldown > 0f) itemStack.Cooldown -= Time.deltaTime;
+                if(itemStack.ItemType.OnUpdate != null) itemStack.ItemType.OnUpdate(itemStack);
+            }
         }
         var itemInHand = GetItemStack(SelectedSlot);
         if(itemInHand != null && itemInHand.ItemType.OnUpdateInHand != null)

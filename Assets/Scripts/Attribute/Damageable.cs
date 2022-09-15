@@ -18,6 +18,7 @@ public class Damageable : MonoBehaviour
     protected SpriteRenderer spriteRenderer;
     [SerializeField]
     public bool Invulerable = false;
+    public bool IsDisplayingDamageEffect { get; private set; } 
 
 
     protected virtual void Awake()
@@ -61,7 +62,7 @@ public class Damageable : MonoBehaviour
         Life -= finalDamage;
         if(displayDamage && GameManager.Instance.CanDisplayDamage())
         {
-            GameManager.Instance.StartCoroutine(DisplayDamageCoroutine(finalDamage, isCritical));
+            ObjectPool.Instance.StartCoroutine(DisplayDamageCoroutine(finalDamage, isCritical));
         }
     }
 
@@ -105,6 +106,7 @@ public class Damageable : MonoBehaviour
 
     protected virtual IEnumerator ShowDamageEffectCoroutine(float time)
     {
+        IsDisplayingDamageEffect = true;
         var ratio = 1f;
         while (ratio > 0f)
         {
@@ -112,6 +114,7 @@ public class Damageable : MonoBehaviour
             ratio -= Time.deltaTime / time;
             yield return null;
         }
+        IsDisplayingDamageEffect = false;
     }
 
     protected void ColorUpdate()

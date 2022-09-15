@@ -9,8 +9,6 @@ using UnityEngine.EventSystems;
 
 public class Player : LivingEntity
 {
-    private static int s_playerLayer = -1, s_passingLayer = -1;
-
     public static Player Instance { get; private set; }
     public const byte HotbarSize = 5;
     public static readonly KeyCode[] AlphaKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5,
@@ -21,7 +19,7 @@ public class Player : LivingEntity
     [SerializeField]
     private Image _lifeBarImg, _manaBarImg, _staminaBarImg;
     [SerializeField]
-    private GameObject _hotbar, _invContents;
+    private GameObject _hotbar;
     [SerializeField]
     private RectTransform _slotSelector;
     [SerializeField]
@@ -30,12 +28,6 @@ public class Player : LivingEntity
     private GameObject _floatingItem;
     [SerializeField]
     private SpriteRenderer _floatingItemRenderer, _sweepRenderer;
-    [SerializeField]
-    private RectTransform _pointerHoldItem;
-    [SerializeField]
-    private Image _pointerHoldItemImage;
-    [SerializeField]
-    private TextMeshProUGUI _pointerHoldItemCount;
     [SerializeField]
     private TextMeshProUGUI _goldText;
     [SerializeField]
@@ -65,9 +57,6 @@ public class Player : LivingEntity
 
         Instance = this;
 
-        if(s_passingLayer == -1) s_passingLayer = LayerMask.NameToLayer("Passing");
-        if(s_playerLayer == -1) s_playerLayer = LayerMask.NameToLayer("Player");
-
         _slotPrefab = Resources.Load<GameObject>("UI/Slot");
         _invSlotPrefab = Resources.Load<GameObject>("UI/InventorySlot");
         _effectIconPrefab = Resources.Load<GameObject>("UI/Effect");
@@ -83,33 +72,40 @@ public class Player : LivingEntity
             rt.localPosition = p;
 
             var itemImage = slot.transform.GetChild(2).GetComponent<Image>();
-            var itemCount = slot.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
+            var itemCount = slot.transform.GetChild(4).GetComponent<TextMeshProUGUI>();
+            var cooldownPanel = slot.transform.GetChild(3).GetComponent<Image>();
+            var durabilityImage = slot.transform.GetChild(5).GetComponent<Image>();
 
             itemImage.gameObject.SetActive(false);
             itemCount.gameObject.SetActive(false);
 
-            _slots[i] = new(itemImage, itemCount);
+            _slots[i] = new(itemImage, itemCount, cooldownPanel, durabilityImage);
         }
 
         _slotSelector.SetAsLastSibling();
 
         for (var i = 0; i < HotbarSize * Inventory.LineCount; i++)
         {
-            var slot = Instantiate(_invSlotPrefab, _invContents.transform);
+            var slot = Instantiate(_invSlotPrefab, GameManager.Instance.InvContents.transform);
             var itemImage = slot.transform.GetChild(1).GetComponent<Image>();
-            var itemCount = slot.transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+            var itemCount = slot.transform.GetChild(3).GetComponent<TextMeshProUGUI>();
+            var cooldownPanel = slot.transform.GetChild(2).GetComponent<Image>();
+            var durabilityImage = slot.transform.GetChild(4).GetComponent<Image>();
             var trigger = slot.GetComponent<InventorySlot>();
             trigger.SlotId = i;
 
             itemImage.gameObject.SetActive(false);
             itemCount.gameObject.SetActive(false);
 
-            _inventorySlots[i] = new(itemImage, itemCount);
+            _inventorySlots[i] = new(itemImage, itemCount, cooldownPanel, durabilityImage);
         }
+        Inventory.GiveDefaultItem();
+    }
 
-        Inventory.AddItemStack(new(ItemType.MagicWand, 1));
-        Inventory.AddItemStack(new(ItemType.HealingPotion, 3));
-        Inventory.AddItemStack(new(ItemType.ManaPotion, 10));
+    public override void Revive()
+    {
+        base.Revive();
+        Inventory.GiveDefaultItem();
     }
 
     public void ShowActionBar(string key, string text, float duration = 0.5f)
@@ -126,10 +122,19 @@ public class Player : LivingEntity
 
     public void OnSlotHoverExit(int slot)
     {
+        GameManager.Instance.ItemInfo.SetActive(false);
     }
 
     public void OnSlotHoverEnter(int slot)
     {
+        var itemStack = Inventory.GetItemStack(slot);
+        GameManager.Instance.ItemInfo.SetActive(itemStack != null);
+        if(itemStack != null)
+        {
+            GameManager.Instance.ItemInfoName.SetText(itemStack.ItemType.DisplayName);
+            GameManager.Instance.ItemInfoDescription.SetText(itemStack.ItemType.Description);
+            GameManager.Instance.ItemInfoImage.sprite = itemStack.ItemType.Sprite;
+        }
     }
 
     protected override void InitializeDefaults()
@@ -152,7 +157,7 @@ public class Player : LivingEntity
     protected override void OnLateUpdate()
     {
         base.OnLateUpdate();
-        _floatingItem.SetActive(_floatingItemVisible);
+        _floatingItem.transform.GetChild(0).gameObject.SetActive(_floatingItemVisible);
     }
 
     protected override void OnUpdate()
@@ -176,6 +181,7 @@ public class Player : LivingEntity
                 }
             }
         }
+        if(KeyInput.GetKeyDown(KeyCode.B)) AddEffect(EffectType.Blindness, 100, 10, this);
     }
 
     public override Effect AddEffect(EffectType type, int level, float duration, LivingEntity caster)
@@ -185,16 +191,15 @@ public class Player : LivingEntity
         var icon = Instantiate(_effectIconPrefab, _effectsContent);
         var iconSprite = Resources.Load<Sprite>("EffectIcons/" + type.Name);
         icon.transform.GetChild(1).GetComponent<Image>().sprite = iconSprite;
-        var iconFrontImage = icon.transform.GetChild(2).GetComponent<Image>();
-        iconFrontImage.sprite = iconSprite;
-        eff.EffectIcon = iconFrontImage;
+        var cooldownPanel = icon.transform.GetChild(2).GetComponent<Image>();
+        eff.CooldownPanel = cooldownPanel;
         return eff;
     }
 
     public override void RemoveEffect(Effect eff)
     {
         base.RemoveEffect(eff);
-        Destroy(eff.EffectIcon.transform.parent.gameObject);
+        Destroy(eff.CooldownPanel.transform.parent.gameObject);
     }
 
     public override void Hit(Attribute attribute, DamageType type = DamageType.Normal)
@@ -203,25 +208,24 @@ public class Player : LivingEntity
         if(!IsDead) Camera.main.gameObject.GetComponent<CameraMove>().Shake(.3f, .2f);
     }
 
-    public override void ShowDamageEffect()
-    {
-        base.ShowDamageEffect();
-        gameObject.layer = s_passingLayer;
-    }
-
     protected override void EffectUpdate()
     {
         base.EffectUpdate();
         foreach(var eff in effects)
         {
-            eff.EffectIcon.fillAmount = Mathf.Clamp01(eff.Duration / eff.MaxDuration);
+            eff.CooldownPanel.fillAmount = Mathf.Clamp01(1 - eff.Duration / eff.MaxDuration);
         }
+    }
+
+    protected override void LayerUpdate()
+    {
+        base.LayerUpdate();
+        if(IsDisplayingDamageEffect) gameObject.layer = PassingLayer;
     }
 
     protected override IEnumerator ShowDamageEffectCoroutine(float time)
     {
         yield return base.ShowDamageEffectCoroutine(time);
-        gameObject.layer = s_playerLayer;
     }
 
     public void SweepAttackNearby(float radius, int count = 1, DamageType type = DamageType.Normal, 
@@ -244,10 +248,10 @@ public class Player : LivingEntity
         {
             yield return null;
             var rot = _floatingItem.transform.rotation.eulerAngles.z + 90;
-            
             foreach(var angle in ExtraMath.GetAnglePoints(beforeRot, rot, 4))
             {
                 var axis = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
+                Debug.DrawRay(transform.position, axis * radius, Color.red, 5);
                 var hits = Physics2D.RaycastAll(transform.position, axis, radius, mask);
                 foreach(var hit in hits)
                 {
@@ -285,12 +289,12 @@ public class Player : LivingEntity
             }
             else
             {
-                _pointerHoldItem.position = Camera.main.ScreenToViewportPoint(KeyInput.MousePosition) * new Vector2(Screen.width, Screen.height);
-                _pointerHoldItemImage.sprite = Inventory.PointerHoldItem.ItemType.Sprite;
-                _pointerHoldItemCount.SetText(Inventory.PointerHoldItem.Amount.ToString());
+                GameManager.Instance.PointerHoldItem.position = Camera.main.ScreenToViewportPoint(KeyInput.MousePosition) * new Vector2(Screen.width, Screen.height);
+                GameManager.Instance.PointerHoldItemImage.sprite = Inventory.PointerHoldItem.ItemType.Sprite;
+                GameManager.Instance.PointerHoldItemCount.SetText(Inventory.PointerHoldItem.Amount.ToString());
             }
         }
-        _pointerHoldItem.gameObject.SetActive(Inventory.PointerHoldItem != null);
+        GameManager.Instance.PointerHoldItem.gameObject.SetActive(Inventory.PointerHoldItem != null);
 
         for (var i = 0; i < _slots.Length; i++)
         {
@@ -298,8 +302,17 @@ public class Player : LivingEntity
             var itemStack = this.Inventory.GetItemStack(i);
             slotInfo.ItemCount.gameObject.SetActive(itemStack != null);
             slotInfo.ItemImage.gameObject.SetActive(itemStack != null);
-            slotInfo.ItemImage.sprite = itemStack?.ItemType?.Sprite;
-            slotInfo.ItemCount.SetText(itemStack?.Amount.ToString());
+            slotInfo.DurabilityImageBack.gameObject.SetActive(itemStack != null);
+            if(itemStack != null)
+            {
+                slotInfo.ItemImage.sprite = itemStack.ItemType.Sprite;
+                slotInfo.CooldownPanel.fillAmount = itemStack.Cooldown / Math.Max(itemStack.MaxCooldown, float.Epsilon);
+                var durability = Mathf.Clamp01(itemStack.ItemData.Durability / itemStack.ItemType.ItemData.Durability);
+                slotInfo.DurabilityImageBack.gameObject.SetActive(durability < 1f && durability > 0f);
+                slotInfo.DurabilityImageFront.fillAmount = durability;
+                slotInfo.DurabilityImageFront.color = Color.Lerp(Color.red, Color.green, durability);
+                slotInfo.ItemCount.SetText(itemStack.Amount.ToString());
+            }
         }
 
         for (var i = 0; i < _inventorySlots.Length; i++)
@@ -308,8 +321,17 @@ public class Player : LivingEntity
             var itemStack = this.Inventory.GetItemStack(i);
             slotInfo.ItemCount.gameObject.SetActive(itemStack != null);
             slotInfo.ItemImage.gameObject.SetActive(itemStack != null);
-            slotInfo.ItemImage.sprite = itemStack?.ItemType?.Sprite;
-            slotInfo.ItemCount.SetText(itemStack?.Amount.ToString());
+            slotInfo.DurabilityImageBack.gameObject.SetActive(itemStack != null);
+            if(itemStack != null)
+            {
+                slotInfo.ItemImage.sprite = itemStack.ItemType.Sprite;
+                slotInfo.CooldownPanel.fillAmount = itemStack.Cooldown / Math.Max(itemStack.MaxCooldown, float.Epsilon);
+                var durability = Mathf.Clamp01(itemStack.ItemData.Durability / itemStack.ItemType.ItemData.Durability);
+                slotInfo.DurabilityImageBack.gameObject.SetActive(durability < 1f && durability > 0f);
+                slotInfo.DurabilityImageFront.fillAmount = durability;
+                slotInfo.DurabilityImageFront.color = Color.Lerp(Color.red, Color.green, durability);
+                slotInfo.ItemCount.SetText(itemStack.Amount.ToString());
+            }
         }
     
         var scrollY = KeyInput.MouseScrollDelta.y;
@@ -332,7 +354,6 @@ public class Player : LivingEntity
                 Inventory.UseItem(Inventory.SelectedSlot, i);
             }
         }
-
         Inventory.Update();
     }
 
@@ -429,12 +450,18 @@ public class Player : LivingEntity
     private class SlotInfo
     {
         public Image ItemImage { get; private set; }
+        public Image CooldownPanel { get; private set; }
         public TextMeshProUGUI ItemCount { get; private set; }
+        public Image DurabilityImageBack { get; private set; }
+        public Image DurabilityImageFront { get; private set; }
 
-        public SlotInfo(Image itemImage, TextMeshProUGUI itemCount)
+        public SlotInfo(Image itemImage, TextMeshProUGUI itemCount, Image cooldownPanel, Image durabilityImageBack)
         {
             ItemImage = itemImage;
             ItemCount = itemCount;
+            CooldownPanel = cooldownPanel;
+            DurabilityImageBack = durabilityImageBack;
+            DurabilityImageFront = durabilityImageBack.transform.GetChild(0).GetComponent<Image>();
         }
     }
 }

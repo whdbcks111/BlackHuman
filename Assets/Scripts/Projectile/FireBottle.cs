@@ -16,7 +16,7 @@ public class FireBottle : Projectile
         foreach(var collider in Physics2D.OverlapCircleAll(transform.position, 2f))
         {
             var living = collider.gameObject.GetComponent<LivingEntity>();
-            living?.AddEffect(EffectType.Fire, 3, Random.Range(8f, 19f), self);
+            living?.AddEffect(EffectType.Fire, 3, Random.Range(8f, 19f), Self);
         }
     }
 

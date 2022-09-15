@@ -8,6 +8,6 @@ public class Arrow : Projectile
     {
         base.OnCollision(entity);
         SoundManager.Instance.PlayOneShot("Arrow", 1f);
-        if(entity is LivingEntity living) living.AddEffect(EffectType.Blindness, 2, 5, self);
+        if(entity is LivingEntity living) living.AddEffect(EffectType.Blindness, 2, 5, Self);
     }
 }

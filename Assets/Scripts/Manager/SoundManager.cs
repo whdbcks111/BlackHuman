@@ -10,23 +10,19 @@ public class SoundManager : MonoBehaviour
     [SerializeField]
     public AudioSource BgmAudioSource, SeAudioSource;
     [SerializeField]
-    private BackgroundMusic[] _musics;
+    private SerializableDictionary<string, BackgroundMusic> _musics;
     [SerializeField]
     private SerializableDictionary<string, AudioClip> _sounds;
-    private int _index = 0;
+    private string _curMusicName = "";
 
     private void Awake() {
-        if(Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
         Instance = this;
     }
 
     private void Update() {
-        if(_musics.Length == 0) return;
-        var curMusic = _musics[_index % _musics.Length];
+        if(_musics.Count == 0) return;
+        if(!_musics.ContainsKey(_curMusicName)) return;
+        var curMusic = _musics[_curMusicName];
         if(BgmAudioSource.clip != curMusic.OpenClip && BgmAudioSource.clip != curMusic.LoopClip) 
         {
             BgmAudioSource.clip = curMusic.OpenClip;
@@ -41,10 +37,15 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    public void NextMusic() 
+    public void ResetMusic()
     {
-        if(_musics.Length == 0) return;
-        _index = (_index + 1) % _musics.Length;
+        BgmAudioSource.Stop();
+        BgmAudioSource.Play();
+    }
+
+    public void PlayMusic(string name) 
+    {
+        if(_musics.ContainsKey(name)) _curMusicName = name;
     }
 
     public void PlayOneShot(string name, float vol = 1f)

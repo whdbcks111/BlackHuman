@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+// Project Settings에서 Storage의 실행 순서를 -2로 설정함
 public class Storage : MonoBehaviour
 {
     public static Storage Instance { get; private set; }
@@ -10,11 +10,6 @@ public class Storage : MonoBehaviour
     private SerializableDictionary<string, GameObject> data;
 
     private void Awake() {
-        if(Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
         Instance = this;
     }
 

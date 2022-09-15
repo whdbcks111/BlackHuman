@@ -41,18 +41,14 @@ public class ParticleManager : MonoBehaviour
     }
 
     public ParticleSystem SpawnParticle(Vector3 pos, ParticleType type, float duration = 1f, 
-            int countPerSecond = 0, int burst = 0, bool loop = false, Transform parent=null)
-    {
-        return SpawnParticle(pos, type, Color.clear, duration, countPerSecond, burst, loop, parent);
-    }
+            int countPerSecond = 0, int burst = 0, bool loop = false, Transform parent=null) 
+        => SpawnParticle(pos, type, Color.clear, duration, countPerSecond, burst, loop, parent);
 
-    public ParticleSystem SpawnParticle(ParticleType type, Transform parent, float duration = 1f, int count = 0, int burst = 0, bool loop = false)
-    {
-        return SpawnParticle(Vector3.zero, type, Color.clear, duration, count, burst, loop, parent);
-    }
+    public ParticleSystem SpawnParticle(ParticleType type, Transform parent, float duration = 1f, 
+            int count = 0, int burst = 0, bool loop = false)
+         => SpawnParticle(Vector3.zero, type, Color.clear, duration, count, burst, loop, parent);
 
-    public ParticleSystem SpawnParticle(ParticleType type, Color color, Transform parent, float duration = 1f, int count = 0, int burst = 0, bool loop = false)
-    {
-        return SpawnParticle(Vector3.zero, type, color, duration, count, burst, loop, parent);
-    }
+    public ParticleSystem SpawnParticle(ParticleType type, Color color, Transform parent, float duration = 1f, 
+            int count = 0, int burst = 0, bool loop = false)
+        => SpawnParticle(Vector3.zero, type, color, duration, count, burst, loop, parent);
 }
