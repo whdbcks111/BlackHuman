@@ -569,6 +569,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _slideAxis: {x: -100, y: 0}
+  _rectTransform: {fileID: 600661781}
 --- !u!1 &991144201
 GameObject:
   m_ObjectHideFlags: 0
@@ -1356,3 +1357,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _slideAxis: {x: -100, y: 0}
+  _rectTransform: {fileID: 2026115925}
